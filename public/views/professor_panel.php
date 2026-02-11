@@ -68,6 +68,76 @@ $stmt = $pdo->prepare("
 ");
 $stmt->execute([$professorId]);
 $existingAvailability = $stmt->fetchAll(PDO::FETCH_ASSOC);
+// JSON handler for availability saves (used by professor_tabs.js)
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
+    if (stripos($contentType, 'application/json') !== false) {
+        header('Content-Type: application/json; charset=utf-8');
+        $payload = json_decode(file_get_contents('php://input'), true);
+        if (!is_array($payload)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Neispravan JSON payload.']);
+            exit;
+        }
+
+        if (($payload['action'] ?? '') === 'save_availability') {
+            $data = $payload['data'] ?? [];
+            if (!is_array($data) || empty($data)) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'error' => 'Nema termina za čuvanje.']);
+                exit;
+            }
+
+            $rows = [];
+            foreach ($data as $row) {
+                $day = isset($row['day']) ? (int)$row['day'] : 0;
+                $from = isset($row['from']) ? trim((string)$row['from']) : '';
+                $to = isset($row['to']) ? trim((string)$row['to']) : '';
+                if ($day < 1 || $day > 5) {
+                    continue;
+                }
+                if (!preg_match('/^\d{2}:\d{2}$/', $from) || !preg_match('/^\d{2}:\d{2}$/', $to)) {
+                    continue;
+                }
+                if ($from >= $to) {
+                    continue;
+                }
+                $rows[] = [$day, $from, $to];
+            }
+
+            if (empty($rows)) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'error' => 'Termini nisu validni.']);
+                exit;
+            }
+
+            try {
+                $pdo->beginTransaction();
+                $del = $pdo->prepare("DELETE FROM professor_availability WHERE professor_id = ?");
+                $del->execute([$professorId]);
+
+                $ins = $pdo->prepare("INSERT INTO professor_availability (professor_id, weekday, start_time, end_time) VALUES (?, ?, ?, ?)");
+                foreach ($rows as $r) {
+                    $ins->execute([$professorId, $r[0], $r[1], $r[2]]);
+                }
+
+                $pdo->commit();
+                echo json_encode(['success' => true]);
+            } catch (PDOException $e) {
+                if ($pdo->inTransaction()) {
+                    $pdo->rollBack();
+                }
+                http_response_code(500);
+                echo json_encode(['success' => false, 'error' => 'Greška pri čuvanju: ' . $e->getMessage()]);
+            }
+            exit;
+        }
+
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => 'Nepoznata akcija.']);
+        exit;
+    }
+}
 // POST router za profile/password update
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';

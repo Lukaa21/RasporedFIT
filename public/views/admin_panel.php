@@ -92,15 +92,12 @@ if (isset($_GET['action']) && $_GET['action'] === 'getschedule') {
                 'start' => substr($row['starts_at'], 11, 5),
                 'end' => substr($row['ends_at'], 11, 5),
                 'course' => $row['coursename'],
-<<<<<<< Updated upstream
-                'room'   => $row['roomcode'],
-                'type'   => $row['type_enum'],
+
+                'room' => $row['roomcode'],
+                'type' => $row['type_enum'],
                 'is_online' => (bool)$row['is_online'],
                 'professors' => $row['professors'],
-                'assistants' => $row['assistants']
-=======
-                'room' => $row['roomcode']
->>>>>>> Stashed changes
+                'assistants' => $row['assistants'],
             ];
         }
 
@@ -1750,9 +1747,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <!-- Sekcija: Predmeti i sedmice kolokvijuma -->
                     <div style="margin-bottom: 40px;">
                         <h3>Predmeti i sedmice kolokvijuma</h3>
-                        <p>Pregled svih predmeta sa povezanim profesorima/asistentima i postavljenim sedmicama kolokvijuma.</p>
+                        <p>Pregled svih predmeta sa povezanim profesorima/asistentima i postavljenim sedmicama
+                            kolokvijuma.</p>
 
-                        <table border="1" cellpadding="5" style="margin-top: 20px; width: 100%; border-collapse: collapse;">
+                        <table border="1" cellpadding="5"
+                               style="margin-top: 20px; width: 100%; border-collapse: collapse;">
                             <tr style="background: #f4f4f4; color: #333;">
                                 <th>Predmet</th>
                                 <th>Profesori</th>
@@ -1769,7 +1768,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 $summerStart = $academicYear && $academicYear['summer_semester_start'] ? strtotime($academicYear['summer_semester_start']) : null;
 
                                 if (!function_exists('formatColloquiumWeekLabel')) {
-                                    function formatColloquiumWeekLabel($week, $semester, $winterStart, $summerStart) {
+                                    function formatColloquiumWeekLabel($week, $semester, $winterStart, $summerStart)
+                                    {
                                         if ($week === null) return 'Nije uneseno';
                                         $week = (int)$week;
                                         if ($week <= 0) return 'Nije uneseno';
@@ -1884,1091 +1884,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     echo "<div id='schedule-container' style='margin-top:20px; display:none'></div>";
 
-<<<<<<< Updated upstream
-    ?>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
-
-
-        <script>
-const days = ['Ponedjeljak', 'Utorak', 'Srijeda', 'Četvrtak', 'Petak'];
-
-// Shared renderer: builds the full interactive schedule UI from `getschedule` response
-function renderScheduleData(data) {
-    const statusDiv = document.getElementById('schedule-status');
-    const container = document.getElementById('schedule-container');
-    const colSection = document.getElementById('colloquium-section');
-
-    // Store exams for filtering
-    window.allExams = data.exams || [];
-    
-    // Check for Colloquiums
-    const hasColloquiums = window.allExams.some(e => 
-        e.type === 'COLLOQUIUM_1' || e.type === 'COLLOQUIUM_2'
-    );
-    
-    // HIDDEN: Colloquium section display logic disabled
-    /*
-    if (colSection) {
-        if (hasColloquiums) {
-            colSection.style.display = 'block';
-            if (typeof renderColloquiums === 'function') renderColloquiums();
-        } else {
-            colSection.style.display = 'none';
-        }
-    }
-    */
-
-    // clear previous
-    container.innerHTML = '';
-
-    const schedules = data.schedules || {};
-    const scheduleIds = data.schedule_ids || [];
-
-    if (scheduleIds.length === 0) {
-        statusDiv.innerHTML = '<p>Nema rasporeda u bazi.</p>';
-        return;
-    }
-
-    // Collect all events
-    const allEvents = [];
-    scheduleIds.forEach(sid => {
-        Object.keys(schedules[sid] || {}).forEach(sem => {
-            (schedules[sid][sem] || []).forEach(ev => allEvents.push(ev));
-        });
-    });
-
-    const timeSlots = Array.from(new Set(allEvents.map(e => e.start + '-' + e.end))).sort();
-
-    // State
-    let currentWinterIndex = 0;
-    let currentSummerIndex = 0;
-    // initialise lock state from server-exposed global if available
-    let isScheduleLocked = (window.adminData && window.adminData.schedule_locked) ? true : false;
-    const allArrowButtons = [];
-
-    // createControlGroup copied from previous inline code (keeps same behaviour)
-    function createControlGroup(title, isWinter) {
-        const group = document.createElement('div');
-        group.style.textAlign = 'center';
-        group.style.margin = '10px';
-
-        const label = document.createElement('h3');
-        label.textContent = title;
-        label.style.marginBottom = '10px';
-        label.style.color = '#e5e7eb';
-
-        const controls = document.createElement('div');
-        controls.style.display = 'flex';
-        controls.style.alignItems = 'center';
-        controls.style.gap = '15px';
-        controls.style.justifyContent = 'center';
-
-        const leftBtn = document.createElement('button');
-        leftBtn.innerHTML = '◀';
-        leftBtn.className = 'nav-arrow';
-        leftBtn.style.cssText = 'font-size: 20px; padding: 5px 12px; cursor: pointer; border: none; background: #3b82f6; color: white; border-radius: 6px;';
-        allArrowButtons.push(leftBtn);
-
-        const info = document.createElement('span');
-        info.innerHTML = 'Verzija 1';
-        info.style.fontWeight = 'bold';
-
-        const rightBtn = document.createElement('button');
-        rightBtn.innerHTML = '▶';
-        rightBtn.className = 'nav-arrow';
-        rightBtn.style.cssText = 'font-size: 20px; padding: 5px 12px; cursor: pointer; border: none; background: #3b82f6; color: white; border-radius: 6px;';
-        allArrowButtons.push(rightBtn);
-
-        const updateState = () => {
-            const idx = isWinter ? currentWinterIndex : currentSummerIndex;
-            info.innerHTML = 'Verzija ' + (idx + 1);
-
-            leftBtn.disabled = idx === 0 || isScheduleLocked;
-            leftBtn.style.opacity = (idx === 0 || isScheduleLocked) ? '0.5' : '1';
-
-            rightBtn.disabled = idx === scheduleIds.length - 1 || isScheduleLocked;
-            rightBtn.style.opacity = (idx === scheduleIds.length - 1 || isScheduleLocked) ? '0.5' : '1';
-
-            const sems = isWinter ? [1,3,5] : [2,4,6];
-            sems.forEach(s => updateSemesterTable(s));
-        };
-
-        leftBtn.addEventListener('click', () => {
-            if (isScheduleLocked) return;
-            if (isWinter) {
-                if (currentWinterIndex > 0) currentWinterIndex--;
-            } else {
-                if (currentSummerIndex > 0) currentSummerIndex--;
-            }
-            updateState();
-        });
-
-        rightBtn.addEventListener('click', () => {
-            if (isScheduleLocked) return;
-            if (isWinter) {
-                if (currentWinterIndex < scheduleIds.length - 1) currentWinterIndex++;
-            } else {
-                if (currentSummerIndex < scheduleIds.length - 1) currentSummerIndex++;
-            }
-            updateState();
-        });
-
-        setTimeout(updateState, 0);
-
-        controls.appendChild(leftBtn);
-        controls.appendChild(info);
-        controls.appendChild(rightBtn);
-
-        group.appendChild(label);
-        group.appendChild(controls);
-        return group;
-    }
-
-    // enableTdSwap and buildTableForSemester functions (copied behaviour)
-    function enableTdSwap(tableEl) {
-        const rows = tableEl.querySelectorAll('tbody tr');
-        rows.forEach((tr) => {
-            new Sortable(tr, {
-                group: { name: 'cells', pull: true, put: true },
-                animation: 150,
-                draggable: 'td',
-                filter: '.no-drag',
-                preventOnFilter: true,
-                swap: true,
-                swapClass: 'td-swap-hl',
-                fallbackOnBody: true,
-                swapThreshold: 0.65,
-                invertSwap: true
-            });
-        });
-    }
-
-    function formatEventLabel(ev) {
-        const typeMap = {
-            LECTURE: 'Predavanje',
-            EXERCISE: 'Vježbe',
-            LAB: 'Lab'
-        };
-        const typeLabel = typeMap[ev.type] || ev.type || '';
-        const useAssistants = ev.type === 'EXERCISE' || ev.type === 'LAB';
-        const nameList = useAssistants ? (ev.assistants || '') : (ev.professors || '');
-        const fallbackNameList = (!nameList && ev.professors) ? ev.professors : nameList;
-        const profLabel = fallbackNameList ? (' - ' + fallbackNameList) : '';
-        const locationLabel = ev.is_online ? 'ONLINE' : (ev.room || '');
-        const locationSuffix = locationLabel ? (' (' + locationLabel + ')') : '';
-        const typeSuffix = typeLabel ? (' [' + typeLabel + ']') : '';
-        return ev.course + profLabel + typeSuffix + locationSuffix;
-    }
-
-    function buildTableForSemester(sem, events, scheduleIdx, totalSchedules) {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'semester-wrapper';
-        wrapper.id = 'semester-wrapper-' + sem;
-        wrapper.style.marginBottom = '40px';
-        wrapper.style.border = '1px solid #444';
-        wrapper.style.borderRadius = '12px';
-        wrapper.style.padding = '20px';
-        wrapper.style.background = 'transparent';
-
-        const header = document.createElement('div');
-        header.style.textAlign = 'center';
-        header.style.marginBottom = '15px';
-
-        const h3 = document.createElement('h3');
-        const semType = (sem % 2 === 1) ? 'Zimski semestar' : 'Ljetnji semestar';
-        h3.style.margin = '0';
-        h3.innerHTML = sem + '. semestar – ' + semType + '<br><small style="color: #666; font-weight: normal;">(Prikazana verzija: ' + (scheduleIdx + 1) + ')</small>';
-        header.appendChild(h3);
-        wrapper.appendChild(header);
-
-        if (!events || events.length === 0) {
-            const noData = document.createElement('p');
-            noData.textContent = 'Nema podataka za ovaj raspored.';
-            noData.style.textAlign = 'center';
-            noData.style.color = '#999';
-            wrapper.appendChild(noData);
-            return wrapper;
-        }
-
-        const table = document.createElement('table');
-        table.border = '1';
-        table.cellPadding = '5';
-        table.style.width = '100%';
-        table.style.borderCollapse = 'collapse';
-        table.className = 'schedule-table';
-        table.setAttribute('data-semester', sem);
-
-        const thead = document.createElement('thead');
-        const trHead = document.createElement('tr');
-        const thTime = document.createElement('th');
-        thTime.textContent = 'Vrijeme';
-        trHead.appendChild(thTime);
-        days.forEach(d => { const th = document.createElement('th'); th.textContent = d; trHead.appendChild(th); });
-        thead.appendChild(trHead);
-        table.appendChild(thead);
-
-        const tbody = document.createElement('tbody');
-        timeSlots.forEach(slot => {
-            const hasAnyEvent = events.some(ev => (ev.start + '-' + ev.end) === slot);
-            if (!hasAnyEvent) return;
-
-            const tr = document.createElement('tr');
-            const tdTime = document.createElement('td');
-            tdTime.textContent = slot;
-            tdTime.classList.add('no-drag');
-            tr.appendChild(tdTime);
-
-            for (let d = 1; d <= 5; d++) {
-                const td = document.createElement('td');
-                const cellEvents = events.filter(ev => ev.day === d && (ev.start + '-' + ev.end) === slot);
-                if (cellEvents.length > 0) {
-                    td.innerHTML = cellEvents.map(ev => formatEventLabel(ev)).join('<br>');
-                }
-                tr.appendChild(td);
-            }
-
-            tbody.appendChild(tr);
-        });
-
-        table.appendChild(tbody);
-        wrapper.appendChild(table);
-        enableTdSwap(table);
-
-        const pdfBtn = document.createElement('button');
-        pdfBtn.textContent = 'Sačuvaj kao PDF';
-        pdfBtn.className = 'action-button add-button';
-        pdfBtn.style.marginTop = '10px';
-        pdfBtn.addEventListener('click', () => { saveTableAsPDF(table, sem); });
-        wrapper.appendChild(pdfBtn);
-
-        return wrapper;
-    }
-
-    function updateSemesterTable(sem) {
-        const oldWrapper = document.getElementById('semester-wrapper-' + sem);
-        if (!oldWrapper) return;
-
-        const isWinter = (sem % 2 !== 0);
-        const schedIdx = isWinter ? currentWinterIndex : currentSummerIndex;
-        const schedId = scheduleIds[schedIdx];
-        const events = (schedules[schedId] && schedules[schedId][sem]) || [];
-
-        const newWrapper = buildTableForSemester(sem, events, schedIdx, scheduleIds.length);
-        oldWrapper.replaceWith(newWrapper);
-    }
-
-    // MASTER CONTROLS
-    const controlsDiv = document.createElement('div');
-    controlsDiv.style.display = 'flex';
-    controlsDiv.style.justifyContent = 'space-around';
-    controlsDiv.style.flexWrap = 'wrap';
-    controlsDiv.style.marginBottom = '30px';
-    controlsDiv.style.padding = '20px';
-    controlsDiv.style.background = '#2d2d2d';
-    controlsDiv.style.borderRadius = '10px';
-    controlsDiv.style.border = '1px solid #444';
-    container.appendChild(controlsDiv);
-
-    controlsDiv.appendChild(createControlGroup('Zimski Semestri (1, 3, 5)', true));
-
-    // Lock button
-    const lockBtnContainer = document.createElement('div');
-    lockBtnContainer.style.display = 'flex';
-    lockBtnContainer.style.alignItems = 'center';
-    lockBtnContainer.style.justifyContent = 'center';
-    lockBtnContainer.style.margin = '10px';
-    const lockBtn = document.createElement('button');
-    // set initial label/style based on current lock state
-    if (isScheduleLocked) {
-        lockBtn.textContent = '🔒 Otključaj';
-        lockBtn.style.cssText = 'padding: 10px 20px; font-size: 14px; cursor: pointer; border: 2px solid #ef4444; background: #ef4444; color: white; border-radius: 6px; font-weight: bold; transition: all 0.3s ease;';
-    } else {
-        lockBtn.textContent = '🔓 Zaključaj';
-        lockBtn.style.cssText = 'padding: 10px 20px; font-size: 14px; cursor: pointer; border: 2px solid #f59e0b; background: #f59e0b; color: white; border-radius: 6px; font-weight: bold; transition: all 0.3s ease;';
-    }
-    lockBtnContainer.appendChild(lockBtn);
-    // ensure arrow buttons reflect initial lock state
-    setTimeout(() => {
-        allArrowButtons.forEach(btn => {
-            if (isScheduleLocked) {
-                btn.disabled = true;
-                btn.style.opacity = '0.5';
-                btn.style.cursor = 'not-allowed';
-            } else {
-                btn.disabled = false;
-                btn.style.opacity = '1';
-                btn.style.cursor = 'pointer';
-            }
-        });
-    }, 0);
-
-    // Lock button click handler (calls server API)
-    lockBtn.addEventListener('click', async () => {
-        // Determine winter and summer schedule IDs based on what's available
-        let winterScheduleId, summerScheduleId;
-        if (scheduleIds.length >= 2) {
-            winterScheduleId = scheduleIds[currentWinterIndex] || scheduleIds[0];
-            summerScheduleId = scheduleIds[currentSummerIndex] || scheduleIds[1] || scheduleIds[0];
-        } else if (scheduleIds.length === 1) {
-            winterScheduleId = scheduleIds[0];
-            summerScheduleId = scheduleIds[0];
-        } else {
-            alert('Greška: Nema dostupnih rasporeda za zaključavanje.');
-            return;
-        }
-
-        isScheduleLocked = !isScheduleLocked;
-
-        try {
-            const payload = {
-                action: 'toggle_lock',
-                is_locked: isScheduleLocked,
-                winter_schedule_id: winterScheduleId,
-                summer_schedule_id: summerScheduleId
-            };
-
-            const response = await fetch('../../src/api/schedule_lock.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            const data = await response.json();
-            if (data && data.success) {
-                // update UI based on new lock state
-                if (isScheduleLocked) {
-                    lockBtn.textContent = '🔒 Otkljucaj';
-                    lockBtn.style.background = '#ef4444';
-                    lockBtn.style.borderColor = '#ef4444';
-                } else {
-                    lockBtn.textContent = '🔓 Zakljucaj';
-                    lockBtn.style.background = '#f59e0b';
-                    lockBtn.style.borderColor = '#f59e0b';
-                }
-
-                allArrowButtons.forEach(btn => {
-                    if (isScheduleLocked) {
-                        btn.disabled = true;
-                        btn.style.opacity = '0.5';
-                        btn.style.cursor = 'not-allowed';
-                    } else {
-                        btn.disabled = false;
-                        btn.style.opacity = '1';
-                        btn.style.cursor = 'pointer';
-                    }
-                });
-
-                // update global flag so subsequent loads see correct state
-                if (window.adminData) window.adminData.schedule_locked = isScheduleLocked;
-            } else {
-                console.error('Failed to save lock state', data && data.message);
-                // revert
-                isScheduleLocked = !isScheduleLocked;
-                alert('Neuspeh pri čuvanju statusa zaključavanja: ' + (data && data.message ? data.message : 'Nepoznata greška'));
-            }
-        } catch (err) {
-            console.error('API error', err);
-            isScheduleLocked = !isScheduleLocked;
-            alert('Greška pri povezivanju sa serverom.');
-        }
-    });
-    controlsDiv.appendChild(lockBtnContainer);
-
-    controlsDiv.appendChild(createControlGroup('Ljetnji Semestri (2, 4, 6)', false));
-
-    // Initial render for all semesters
-    [1,3,5,2,4,6].forEach(sem => {
-        const schedId = scheduleIds[0];
-        const events = (schedules[schedId] && schedules[schedId][sem]) || [];
-        const wrapper = buildTableForSemester(sem, events, 0, scheduleIds.length);
-        container.appendChild(wrapper);
-    });
-
-    // PDF all
-    const pdfAllBtn = document.createElement('button');
-    pdfAllBtn.textContent = 'Sačuvaj kompletan raspored kao PDF';
-    pdfAllBtn.className = 'action-button add-button';
-    pdfAllBtn.style.marginTop = '20px';
-    pdfAllBtn.addEventListener('click', saveFullScheduleAsPDF);
-    container.appendChild(pdfAllBtn);
-}
-(function() {
-    try {
-        const genBtn = document.getElementById('generate-schedule');
-        if (!genBtn) return;
-        const lockedDiv = document.createElement('div');
-        lockedDiv.id = 'locked-schedules-list';
-        lockedDiv.style.marginTop = '12px';
-        lockedDiv.style.display = 'block';
-
-        if (window.adminData && window.adminData.schedule_locked) {
-            const ids = window.adminData.locked_schedule_ids || [];
-            if (ids.length > 0) {
-                // Auto-load the most recent locked schedule so admin sees it immediately
-                (async () => {
-                    const firstId = ids[0];
-                    const statusDiv = document.getElementById('schedule-status');
-                    const container = document.getElementById('schedule-container');
-                    statusDiv.style.display = 'block';
-                    statusDiv.innerHTML = '<p style="color:#3b82f6;">Učitavanje zaključanog rasporeda ID ' + firstId + '...</p>';
-                    container.style.display = 'none';
-                    container.innerHTML = '';
-
-                    try {
-                        const res = await fetch('admin_panel.php?action=getschedule&only_locked_id=' + encodeURIComponent(firstId));
-                        if (!res.ok) throw new Error('HTTP ' + res.status);
-                        const data = await res.json();
-                        if (data.error) {
-                            statusDiv.innerHTML = '<p style="color:#ef4444;">Greška: ' + (data.error || 'Nepoznata greška') + '</p>';
-                            return;
-                        }
-                        // Render using shared renderer so locked schedule UI matches generated one
-                        statusDiv.innerHTML = '<p style="color:#22c55e;">Prikaz zaključanog rasporeda ID ' + firstId + '</p>';
-                        container.style.display = 'block';
-                        renderScheduleData(data);
-                    } catch (err) {
-                        statusDiv.innerHTML = '<p style="color:#ef4444;">Greška pri učitavanju: ' + err.message + '</p>';
-                    }
-                })();
-
-                // quick-access buttons removed; auto-load of the most recent locked schedule remains
-            } else {
-                lockedDiv.innerHTML = '<em>Nema zaključanih rasporeda.</em>';
-            }
-        }
-
-        genBtn.parentNode.insertBefore(lockedDiv, genBtn.nextSibling);
-    } catch (e) {
-        console.warn('locked schedules init error', e);
-    }
-})();
-document.getElementById('generate-schedule').addEventListener('click', async () => {
-    const button = document.getElementById('generate-schedule');
-    const statusDiv = document.getElementById('schedule-status');
-    const container = document.getElementById('schedule-container');
-    
-    // Disable dugme i prikaži loading stanje
-    button.disabled = true;
-    button.textContent = 'Generiše se...';
-    button.classList.add('loading');
-    
-    statusDiv.style.display = 'block';
-    statusDiv.innerHTML = '<p style="color: #3b82f6;">Generisanje rasporeda u toku, molimo sačekajte...</p>';
-    container.style.display = 'none';
-    container.innerHTML = '';
-
-    try {
-        // Pozovi Java program za generisanje rasporeda
-        const generateRes = await fetch('admin_panel.php?action=generateschedule');
-        
-        // Provera da li je odgovor validan
-        if (!generateRes.ok) {
-            throw new Error('HTTP greška: ' + generateRes.status + ' ' + generateRes.statusText);
-        }
-        
-        // Provera da li je odgovor JSON
-        const contentType = generateRes.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-            const text = await generateRes.text();
-            throw new Error('Server nije vratio JSON. Odgovor: ' + text.substring(0, 200));
-        }
-        
-        let generateData;
-        try {
-            const responseText = await generateRes.text();
-            if (!responseText || responseText.trim() === '') {
-                throw new Error('Server je vratio prazan odgovor');
-            }
-            generateData = JSON.parse(responseText);
-        } catch (jsonError) {
-            throw new Error('Greška pri parsiranju JSON odgovora: ' + jsonError.message);
-        }
-        
-        if (generateData.status === 'error') {
-            statusDiv.innerHTML = '<p style="color: #ef4444; padding: 12px; background: rgba(239, 68, 68, 0.1); border-radius: 8px; border: 1px solid #ef4444;">Greška: ' + generateData.message + '</p>';
-            button.disabled = false;
-            button.textContent = 'Generiši raspored časova';
-            button.classList.remove('loading');
-            return;
-        }
-        
-        // Ako je uspešno generisano, prikaži poruku o uspehu
-        statusDiv.innerHTML = '<p style="color: #22c55e; padding: 12px; background: rgba(34, 197, 94, 0.1); border-radius: 8px; border: 1px solid #22c55e;">✓ ' + generateData.message + '</p>';
-        
-        // Sada učitaj i prikaži generisani raspored
-        container.style.display = 'block';
-        
-        const res = await fetch('admin_panel.php?action=getschedule');
-        const data = await res.json();
-        if (data.error) {
-            statusDiv.innerHTML += '<p style="color: #ef4444; margin-top: 10px;">Greška pri učitavanju rasporeda: ' + data.error + '</p>';
-            button.disabled = false;
-            button.textContent = 'Generiši raspored časova';
-            button.classList.remove('loading');
-            return;
-        }
-        // Nova struktura: data.schedules[scheduleId][semester] = events[]
-        // data.schedule_ids = [id1, id2, ...]
-        
-        const schedules = data.schedules || {};
-        const scheduleIds = data.schedule_ids || [];
-        
-        if (scheduleIds.length === 0) {
-            container.innerHTML = '<p>Nema rasporeda u bazi.</p>';
-            button.disabled = false;
-            button.textContent = 'Generiši raspored časova';
-            button.classList.remove('loading');
-            return;
-        }
-
-        // Skupi sve događaje za vremenske slotove
-        const allEvents = [];
-        scheduleIds.forEach(sid => {
-            Object.keys(schedules[sid] || {}).forEach(sem => {
-                (schedules[sid][sem] || []).forEach(ev => allEvents.push(ev));
-            });
-        });
-
-        const timeSlots = Array.from(
-            new Set(allEvents.map(e => e.start + '-' + e.end))
-        ).sort();
-
-        // State: zimski i ljetnji indeksi
-        let currentWinterIndex = 0;
-        let currentSummerIndex = 0;
-
-        // --- MASTER CONTROLS (ZIMSKI / LJETNJI) ---
-        const controlsDiv = document.createElement('div');
-        controlsDiv.style.display = 'flex';
-        controlsDiv.style.justifyContent = 'space-around';
-        controlsDiv.style.flexWrap = 'wrap';
-        controlsDiv.style.marginBottom = '30px';
-        controlsDiv.style.padding = '20px';
-        controlsDiv.style.background = '#2d2d2d';
-        controlsDiv.style.borderRadius = '10px';
-        controlsDiv.style.border = '1px solid #444';
-        
-        container.appendChild(controlsDiv);
-
-        // Lock state management
-        let isScheduleLocked = false; //zakljucavanje rasporeda
-        const allArrowButtons = []; //zakljucavanje rasporeda
-
-        function createControlGroup(title, isWinter) {
-            const group = document.createElement('div');
-            group.style.textAlign = 'center';
-            group.style.margin = '10px';
-            
-            const label = document.createElement('h3');
-            label.textContent = title;
-            label.style.marginBottom = '10px';
-            label.style.color = '#e5e7eb';
-            
-            const controls = document.createElement('div');
-            controls.style.display = 'flex';
-            controls.style.alignItems = 'center';
-            controls.style.gap = '15px';
-            controls.style.justifyContent = 'center';
-            
-            const leftBtn = document.createElement('button');
-            leftBtn.innerHTML = '◀';
-            leftBtn.className = 'nav-arrow';
-            leftBtn.style.cssText = 'font-size: 20px; padding: 5px 12px; cursor: pointer; border: none; background: #3b82f6; color: white; border-radius: 6px;';
-            allArrowButtons.push(leftBtn); //zakljucavanje rasporeda
-
-            const info = document.createElement('span');
-            info.innerHTML = 'Verzija 1';
-            info.style.fontWeight = 'bold';
-            
-            const rightBtn = document.createElement('button');
-            rightBtn.innerHTML = '▶';
-            rightBtn.className = 'nav-arrow';
-            rightBtn.style.cssText = 'font-size: 20px; padding: 5px 12px; cursor: pointer; border: none; background: #3b82f6; color: white; border-radius: 6px;';
-            allArrowButtons.push(rightBtn); //zakljucavanje rasporeda
-
-
-            const updateState = () => {
-                const idx = isWinter ? currentWinterIndex : currentSummerIndex;
-                info.innerHTML = 'Verzija ' + (idx + 1);
-                
-                //zakljucavanje rasporeda
-                leftBtn.disabled = idx === 0 || isScheduleLocked;
-                leftBtn.style.opacity = (idx === 0 || isScheduleLocked) ? '0.5' : '1';
-                
-                rightBtn.disabled = idx === scheduleIds.length - 1 || isScheduleLocked;
-                rightBtn.style.opacity = (idx === scheduleIds.length - 1 || isScheduleLocked) ? '0.5' : '1';
-                
-                
-                leftBtn.disabled = idx === 0;
-                leftBtn.style.opacity = idx === 0 ? '0.5' : '1';
-                
-                rightBtn.disabled = idx === scheduleIds.length - 1;
-                rightBtn.style.opacity = idx === scheduleIds.length - 1 ? '0.5' : '1';
-                
-                // Update relevant tables
-                const sems = isWinter ? [1, 3, 5] : [2, 4, 6];
-                sems.forEach(s => updateSemesterTable(s));
-            };
-            
-            leftBtn.addEventListener('click', () => {
-                if (isScheduleLocked) return; //zakljucavanje rasporeda
-                if (isWinter) {
-                    if (currentWinterIndex > 0) currentWinterIndex--;
-                } else {
-                    if (currentSummerIndex > 0) currentSummerIndex--;
-                }
-                updateState();
-            });
-            
-            rightBtn.addEventListener('click', () => {
-                if (isScheduleLocked) return; //zakljucavanje rasporeda
-                if (isWinter) {
-                    if (currentWinterIndex < scheduleIds.length - 1) currentWinterIndex++;
-                } else {
-                    if (currentSummerIndex < scheduleIds.length - 1) currentSummerIndex++;
-                }
-                updateState();
-            });
-            
-            // Initial call
-            setTimeout(updateState, 0); 
-            
-            controls.appendChild(leftBtn);
-            controls.appendChild(info);
-            controls.appendChild(rightBtn);
-            
-            group.appendChild(label);
-            group.appendChild(controls);
-            return group;
-        }
-
-        controlsDiv.appendChild(createControlGroup('Zimski Semestri (1, 3, 5)', true));
-        
-        //Zakljucavanje rasporeda - START
-        // Lock button
-        const lockBtnContainer = document.createElement('div');
-        lockBtnContainer.style.display = 'flex';
-        lockBtnContainer.style.alignItems = 'center';
-        lockBtnContainer.style.justifyContent = 'center';
-        lockBtnContainer.style.margin = '10px';
-        
-        const lockBtn = document.createElement('button');
-        lockBtn.textContent = '🔓 Zakljucaj';
-        lockBtn.style.cssText = 'padding: 10px 20px; font-size: 14px; cursor: pointer; border: 2px solid #f59e0b; background: #f59e0b; color: white; border-radius: 6px; font-weight: bold; transition: all 0.3s ease;';
-        
-        lockBtn.addEventListener('click', async () => {
-            // Determine winter and summer schedule IDs based on what's available
-            // If we have multiple schedules, use different ones for winter/summer
-            // If only 1 schedule, use it for both
-            let winterScheduleId, summerScheduleId;
-            
-            if (scheduleIds.length >= 2) {
-                // Multiple schedules: use first for winter, second for summer
-                winterScheduleId = scheduleIds[currentWinterIndex] || scheduleIds[0];
-                summerScheduleId = scheduleIds[currentSummerIndex] || scheduleIds[1] || scheduleIds[0];
-            } else if (scheduleIds.length === 1) {
-                // Only 1 schedule: use it for both
-                winterScheduleId = scheduleIds[0];
-                summerScheduleId = scheduleIds[0];
-            } else {
-                // No schedules at all
-                console.error('✗ No schedule IDs found');
-                alert('Greška: Nema dostupnih rasporeda.');
-                return;
-            }
-            
-            // console.log('=== LOCK TOGGLE ===');
-            // console.log('All Available Schedule IDs:', scheduleIds);
-            // console.log('Winter Index:', currentWinterIndex);
-            // console.log('Summer Index:', currentSummerIndex);
-            // console.log('Winter Schedule ID to lock:', winterScheduleId);
-            // console.log('Summer Schedule ID to lock:', summerScheduleId);
-            
-            isScheduleLocked = !isScheduleLocked;
-            
-            // console.log('Winter scheduleId: ',winterScheduleId);
-            // console.log('Summer schedule Id: ',summerScheduleId);
-            // console.log('Is Locked:', isScheduleLocked);
-            // console.log('==================');
-
-            
-            // Make AJAX call to API
-            try {
-                const payload = {
-                    action: 'toggle_lock',
-                    is_locked: isScheduleLocked,
-                    winter_schedule_id: winterScheduleId,
-                    summer_schedule_id: summerScheduleId
-                };
-                
-                // console.log('Sending payload:', JSON.stringify(payload, null, 2));
-                
-                const response = await fetch('../../src/api/schedule_lock.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(payload)
-                });
-                
-                const data = await response.json();
-                console.log('API Response:', data);
-                
-                if (data.success) {
-                    // console.log('✓ Lock state saved:', data.message);
-                    
-                    // Update button appearance AFTER API succeeds
-                    if (isScheduleLocked) {
-                        lockBtn.textContent = '🔒 Otkljucaj';
-                        lockBtn.style.background = '#ef4444';
-                        lockBtn.style.borderColor = '#ef4444';
-                    } else {
-                        lockBtn.textContent = '🔓 Zakljucaj';
-                        lockBtn.style.background = '#f59e0b';
-                        lockBtn.style.borderColor = '#f59e0b';
-                    }
-                    
-                    // Update all arrow buttons AFTER API succeeds
-                    allArrowButtons.forEach(btn => {
-                        if (isScheduleLocked) {
-                            btn.disabled = true;
-                            btn.style.opacity = '0.5';
-                            btn.style.cursor = 'not-allowed';
-                        } else {
-                            btn.disabled = false;
-                            btn.style.opacity = '1';
-                            btn.style.cursor = 'pointer';
-                        }
-                    });
-                } else {
-                    console.error('✗ Failed to save lock state:', data.message);
-                    // Revert the toggle if API call failed
-                    isScheduleLocked = !isScheduleLocked;
-                }
-            } catch (error) {
-                console.error('✗ API call error:', error);
-                // Revert the toggle if API call failed
-                isScheduleLocked = !isScheduleLocked;
-            }
-        });
-        
-        lockBtnContainer.appendChild(lockBtn);
-        controlsDiv.appendChild(lockBtnContainer);
-                
-        //Zakljucavanje rasporeda - END
-
-        controlsDiv.appendChild(createControlGroup('Ljetnji Semestri (2, 4, 6)', false));
-
-        function enableTdSwap(tableEl) {
-            const rows = tableEl.querySelectorAll('tbody tr');
-
-            rows.forEach((tr) => {
-                new Sortable(tr, {
-                group: { name: 'cells', pull: true, put: true },
-                animation: 150,
-                draggable: 'td',
-
-                filter: '.no-drag',        
-                preventOnFilter: true,
-
-                swap: true,                
-                swapClass: 'td-swap-hl',   
-
-                fallbackOnBody: true,      
-                swapThreshold: 0.65,       
-                invertSwap: true           
-                });
-            });
-        }
-
-
-
-        function buildTableForSemester(sem, events, scheduleIdx, totalSchedules) {
-            const wrapper = document.createElement('div');
-            wrapper.className = 'semester-wrapper';
-            wrapper.id = 'semester-wrapper-' + sem;
-            wrapper.style.marginBottom = '40px';
-            wrapper.style.border = '1px solid #444';
-            wrapper.style.borderRadius = '12px';
-            wrapper.style.padding = '20px';
-            wrapper.style.background = 'transparent';
-
-            // NOVI HEADER BEZ STRELICA (Kontrola je sada na vrhu)
-            const header = document.createElement('div');
-            header.style.textAlign = 'center';
-            header.style.marginBottom = '15px';
-
-            const h3 = document.createElement('h3');
-            const semType = (sem % 2 === 1) ? 'Zimski semestar' : 'Ljetnji semestar';
-            h3.style.margin = '0';
-            h3.innerHTML = sem + '. semestar – ' + semType + 
-                '<br><small style="color: #666; font-weight: normal;">(Prikazana verzija: ' + (scheduleIdx + 1) + ')</small>';
-
-            header.appendChild(h3);
-            wrapper.appendChild(header);
-
-            // Tabela
-            if (!events || events.length === 0) {
-                const noData = document.createElement('p');
-                noData.textContent = 'Nema podataka za ovaj raspored.';
-                noData.style.textAlign = 'center';
-                noData.style.color = '#999';
-                wrapper.appendChild(noData);
-            } else {
-                const table = document.createElement('table');
-                table.border = '1';
-                table.cellPadding = '5';
-                table.style.width = '100%';
-                table.style.borderCollapse = 'collapse';
-                table.className = 'schedule-table';
-                table.setAttribute('data-semester', sem);
-
-                const thead = document.createElement('thead');
-                const trHead = document.createElement('tr');
-                const thTime = document.createElement('th');
-                thTime.textContent = 'Vrijeme';
-                trHead.appendChild(thTime);
-                days.forEach(d => {
-                    const th = document.createElement('th');
-                    th.textContent = d;
-                    trHead.appendChild(th);
-                });
-                thead.appendChild(trHead);
-                table.appendChild(thead);
-
-                const tbody = document.createElement('tbody');
-
-                timeSlots.forEach(slot => {
-                    const hasAnyEvent = events.some(ev =>
-                        (ev.start + '-' + ev.end) === slot
-                    );
-                    if (!hasAnyEvent) return;
-
-                    const tr = document.createElement('tr');
-                    const tdTime = document.createElement('td');
-                    tdTime.textContent = slot;
-                    tdTime.classList.add('no-drag');
-                    tr.appendChild(tdTime);
-
-                    for (let d = 1; d <= 5; d++) {
-                        const td = document.createElement('td');
-                        const cellEvents = events.filter(ev =>
-                            ev.day === d && (ev.start + '-' + ev.end) === slot
-                        );
-                        if (cellEvents.length > 0) {
-                            td.innerHTML = cellEvents
-                                .map(ev => ev.course + ' (' + ev.room + ')')
-                                .join('<br>');
-                        }
-                        tr.appendChild(td);
-                    }
-
-                    tbody.appendChild(tr);
-                });
-
-                table.appendChild(tbody);
-                wrapper.appendChild(table);
-                enableTdSwap(table);
-
-                // PDF dugme
-                const pdfBtn = document.createElement('button');
-                pdfBtn.textContent = 'Sačuvaj kao PDF';
-                pdfBtn.className = 'action-button add-button';
-                pdfBtn.style.marginTop = '10px';
-                pdfBtn.addEventListener('click', () => {
-                    saveTableAsPDF(table, sem);
-                });
-                wrapper.appendChild(pdfBtn);
-            }
-
-            return wrapper;
-        }
-
-        function updateSemesterTable(sem) {
-            const oldWrapper = document.getElementById('semester-wrapper-' + sem);
-            if (!oldWrapper) return;
-
-            // Determine if winter or summer
-            const isWinter = (sem % 2 !== 0);
-            const schedIdx = isWinter ? currentWinterIndex : currentSummerIndex;
-            
-            const schedId = scheduleIds[schedIdx];
-            const events = (schedules[schedId] && schedules[schedId][sem]) || [];
-
-            const newWrapper = buildTableForSemester(sem, events, schedIdx, scheduleIds.length);
-            oldWrapper.replaceWith(newWrapper);
-        }
-
-        // Helper function for Exams (List View)
-        function buildSimpleScheduleTable(titleText, events, idSuffix) {
-            const wrapper = document.createElement('div');
-            wrapper.className = 'semester-wrapper'; 
-            wrapper.id = 'semester-wrapper-' + idSuffix;
-            wrapper.style.marginTop = '60px';
-            wrapper.style.marginBottom = '40px';
-            wrapper.style.border = '1px solid #444';
-            wrapper.style.borderRadius = '12px';
-            wrapper.style.padding = '20px';
-            wrapper.style.background = 'transparent';
-
-            const header = document.createElement('div');
-            header.style.textAlign = 'center';
-            header.style.marginBottom = '15px';
-
-            const h3 = document.createElement('h3');
-            h3.style.margin = '0';
-            h3.innerHTML = titleText;
-            header.appendChild(h3);
-            wrapper.appendChild(header);
-
-            if (!events || events.length === 0) {
-                 const p = document.createElement('p');
-                 p.textContent = 'Nema zakazanih kolokvijuma.';
-                 p.style.textAlign = 'center';
-                 p.style.color = '#999';
-                 wrapper.appendChild(p);
-                 return wrapper;
-            }
-
-            const table = document.createElement('table');
-            table.border = '1';
-            table.cellPadding = '5';
-            table.style.width = '100%';
-            table.style.borderCollapse = 'collapse';
-            table.className = 'schedule-table'; 
-
-            const thead = document.createElement('thead');
-            const trHead = document.createElement('tr');
-            ['Datum', 'Dan', 'Vrijeme', 'Predmet', 'Sala'].forEach(text => {
-                const th = document.createElement('th');
-                th.textContent = text;
-                // Reuse existing styles logic via class, but enforce headers
-                // trHead.appendChild(th);
-            });
-            
-            // Or better, stick to valid DOM
-             const headers = ['Datum', 'Dan', 'Vrijeme', 'Predmet', 'Sala'];
-             headers.forEach(h => {
-                const th = document.createElement('th');
-                th.textContent = h;
-                trHead.appendChild(th);
-             });
-             
-            thead.appendChild(trHead);
-            table.appendChild(thead);
-
-            const tbody = document.createElement('tbody');
-            
-            // Sort events by date and time
-            events.sort((a, b) => {
-                const dateA = a.date || '';
-                const dateB = b.date || '';
-                if (dateA !== dateB) return dateA < dateB ? -1 : 1;
-                return a.start.localeCompare(b.start);
-            });
-
-            events.forEach(ev => {
-                const tr = document.createElement('tr');
-                
-                // Date
-                const tdDate = document.createElement('td');
-                tdDate.textContent = ev.date || '-';
-                tr.appendChild(tdDate);
-
-                // Day
-                const tdDay = document.createElement('td');
-                tdDay.textContent = ev.day;
-                tr.appendChild(tdDay);
-
-                // Time
-                const tdTime = document.createElement('td');
-                tdTime.textContent = ev.start + ' - ' + ev.end;
-                tr.appendChild(tdTime);
-
-                // Course
-                const tdCourse = document.createElement('td');
-                tdCourse.textContent = ev.course;
-                tr.appendChild(tdCourse);
-
-                // Room
-                const tdRoom = document.createElement('td');
-                tdRoom.textContent = ev.room;
-                tr.appendChild(tdRoom);
-
-                tbody.appendChild(tr);
-            });
-
-            table.appendChild(tbody);
-            wrapper.appendChild(table);
-
-            // Print button for exams
-            const pdfBtn = document.createElement('button');
-            pdfBtn.textContent = 'Sačuvaj kolokvijume kao PDF';
-            pdfBtn.className = 'action-button add-button';
-            pdfBtn.style.marginTop = '10px';
-            pdfBtn.addEventListener('click', () => {
-                saveTableAsPDF(table, 'kolokvijumi');
-            });
-            wrapper.appendChild(pdfBtn);
-
-            return wrapper;
-        }
-
-        // Inicijalni prikaz - svi semestri sa prvim rasporedom
-        [1, 3, 5, 2, 4, 6].forEach(sem => {
-            const schedId = scheduleIds[0];
-            const events = (schedules[schedId] && schedules[schedId][sem]) || [];
-            const wrapper = buildTableForSemester(sem, events, 0, scheduleIds.length);
-            container.appendChild(wrapper);
-        });
-
-        // Dugme za PDF svih
-        const pdfAllBtn = document.createElement('button');
-        pdfAllBtn.textContent = 'Sačuvaj kompletan raspored kao PDF';
-        pdfAllBtn.className = 'action-button add-button';
-        pdfAllBtn.style.marginTop = '20px';
-        pdfAllBtn.addEventListener('click', saveFullScheduleAsPDF);
-        container.appendChild(pdfAllBtn);
-
-        // --- EXAM TABLE (Raspored Kolokvijuma) ---
-        if (data.exams && data.exams.length > 0) {
-            const exWrapper = buildSimpleScheduleTable('Raspored kolokvijuma (Ispitni rokovi)', data.exams, 'exams');
-            container.appendChild(exWrapper);
-        }
-        
-        // Vrati dugme u normalno stanje
-        button.disabled = false;
-        button.textContent = 'Generiši raspored časova';
-        button.classList.remove('loading');
-
-    } catch (e) {
-        statusDiv.innerHTML = '<p style="color: #ef4444; padding: 12px; background: rgba(239, 68, 68, 0.1); border-radius: 8px; border: 1px solid #ef4444;">Greška pri generisanju rasporeda: ' + e.message + '</p>';
-        button.disabled = false;
-        button.textContent = 'Generiši raspored časova';
-        button.classList.remove('loading');
-    }
-});
-</script>
-                        <script>
-                            function saveFullScheduleAsPDF() {
-                                const { jsPDF } = window.jspdf;
-                                const doc = new jsPDF('landscape', 'pt', 'a4');
-
-                                let y = 40;
-
-                                doc.setFontSize(18);
-                                doc.text('Kompletan raspored časova', 40, y);
-                                y += 30;
-
-                                const tables = document.querySelectorAll('.schedule-table');
-
-                                tables.forEach((table, index) => {
-                                    if (index > 0) {
-                                        doc.addPage();
-                                        y = 40;
-=======
                     ?>
 
                     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -3129,6 +2045,23 @@ document.getElementById('generate-schedule').addEventListener('click', async () 
                                 });
                             }
 
+                            function formatEventLabel(ev) {
+                                const typeMap = {
+                                    LECTURE: 'Predavanje',
+                                    EXERCISE: 'Vježbe',
+                                    LAB: 'Lab'
+                                };
+                                const typeLabel = typeMap[ev.type] || ev.type || '';
+                                const useAssistants = ev.type === 'EXERCISE' || ev.type === 'LAB';
+                                const nameList = useAssistants ? (ev.assistants || '') : (ev.professors || '');
+                                const fallbackNameList = (!nameList && ev.professors) ? ev.professors : nameList;
+                                const profLabel = fallbackNameList ? (' - ' + fallbackNameList) : '';
+                                const locationLabel = ev.is_online ? 'ONLINE' : (ev.room || '');
+                                const locationSuffix = locationLabel ? (' (' + locationLabel + ')') : '';
+                                const typeSuffix = typeLabel ? (' [' + typeLabel + ']') : '';
+                                return ev.course + profLabel + typeSuffix + locationSuffix;
+                            }
+
                             function buildTableForSemester(sem, events, scheduleIdx, totalSchedules) {
                                 const wrapper = document.createElement('div');
                                 wrapper.className = 'semester-wrapper';
@@ -3195,10 +2128,9 @@ document.getElementById('generate-schedule').addEventListener('click', async () 
                                         const td = document.createElement('td');
                                         const cellEvents = events.filter(ev => ev.day === d && (ev.start + '-' + ev.end) === slot);
                                         if (cellEvents.length > 0) {
-                                            td.innerHTML = cellEvents.map(ev => ev.course + ' (' + ev.room + ')').join('<br>');
+                                            td.innerHTML = cellEvents.map(ev => formatEventLabel(ev)).join('<br>');
                                         }
                                         tr.appendChild(td);
->>>>>>> Stashed changes
                                     }
 
                                     tbody.appendChild(tr);
@@ -3367,6 +2299,850 @@ document.getElementById('generate-schedule').addEventListener('click', async () 
                             pdfAllBtn.style.marginTop = '20px';
                             pdfAllBtn.addEventListener('click', saveFullScheduleAsPDF);
                             container.appendChild(pdfAllBtn);
+                        }
+
+                        (function () {
+                            try {
+                                const genBtn = document.getElementById('generate-schedule');
+                                if (!genBtn) return;
+                                const lockedDiv = document.createElement('div');
+                                lockedDiv.id = 'locked-schedules-list';
+                                lockedDiv.style.marginTop = '12px';
+                                lockedDiv.style.display = 'block';
+
+                                if (window.adminData && window.adminData.schedule_locked) {
+                                    const ids = window.adminData.locked_schedule_ids || [];
+                                    if (ids.length > 0) {
+                                        // Auto-load the most recent locked schedule so admin sees it immediately
+                                        (async () => {
+                                            const firstId = ids[0];
+                                            const statusDiv = document.getElementById('schedule-status');
+                                            const container = document.getElementById('schedule-container');
+                                            statusDiv.style.display = 'block';
+                                            statusDiv.innerHTML = '<p style="color:#3b82f6;">Učitavanje zaključanog rasporeda ID ' + firstId + '...</p>';
+                                            container.style.display = 'none';
+                                            container.innerHTML = '';
+
+                                            try {
+                                                const res = await fetch('admin_panel.php?action=getschedule&only_locked_id=' + encodeURIComponent(firstId));
+                                                if (!res.ok) throw new Error('HTTP ' + res.status);
+                                                const data = await res.json();
+                                                if (data.error) {
+                                                    statusDiv.innerHTML = '<p style="color:#ef4444;">Greška: ' + (data.error || 'Nepoznata greška') + '</p>';
+                                                    return;
+                                                }
+                                                // Render using shared renderer so locked schedule UI matches generated one
+                                                statusDiv.innerHTML = '<p style="color:#22c55e;">Prikaz zaključanog rasporeda ID ' + firstId + '</p>';
+                                                container.style.display = 'block';
+                                                renderScheduleData(data);
+                                            } catch (err) {
+                                                statusDiv.innerHTML = '<p style="color:#ef4444;">Greška pri učitavanju: ' + err.message + '</p>';
+                                            }
+                                        })();
+
+                                        // quick-access buttons removed; auto-load of the most recent locked schedule remains
+                                    } else {
+                                        lockedDiv.innerHTML = '<em>Nema zaključanih rasporeda.</em>';
+                                    }
+                                }
+
+                                genBtn.parentNode.insertBefore(lockedDiv, genBtn.nextSibling);
+                            } catch (e) {
+                                console.warn('locked schedules init error', e);
+                            }
+                        })();
+                        document.getElementById('generate-schedule').addEventListener('click', async () => {
+                            const button = document.getElementById('generate-schedule');
+                            const statusDiv = document.getElementById('schedule-status');
+                            const container = document.getElementById('schedule-container');
+
+                            // Disable dugme i prikaži loading stanje
+                            button.disabled = true;
+                            button.textContent = 'Generiše se...';
+                            button.classList.add('loading');
+
+                            statusDiv.style.display = 'block';
+                            statusDiv.innerHTML = '<p style="color: #3b82f6;">Generisanje rasporeda u toku, molimo sačekajte...</p>';
+                            container.style.display = 'none';
+                            container.innerHTML = '';
+
+                            try {
+                                // Pozovi Java program za generisanje rasporeda
+                                const generateRes = await fetch('admin_panel.php?action=generateschedule');
+
+                                // Provera da li je odgovor validan
+                                if (!generateRes.ok) {
+                                    throw new Error('HTTP greška: ' + generateRes.status + ' ' + generateRes.statusText);
+                                }
+
+                                // Provera da li je odgovor JSON
+                                const contentType = generateRes.headers.get('content-type');
+                                if (!contentType || !contentType.includes('application/json')) {
+                                    const text = await generateRes.text();
+                                    throw new Error('Server nije vratio JSON. Odgovor: ' + text.substring(0, 200));
+                                }
+
+                                let generateData;
+                                try {
+                                    const responseText = await generateRes.text();
+                                    if (!responseText || responseText.trim() === '') {
+                                        throw new Error('Server je vratio prazan odgovor');
+                                    }
+                                    generateData = JSON.parse(responseText);
+                                } catch (jsonError) {
+                                    throw new Error('Greška pri parsiranju JSON odgovora: ' + jsonError.message);
+                                }
+
+                                if (generateData.status === 'error') {
+                                    statusDiv.innerHTML = '<p style="color: #ef4444; padding: 12px; background: rgba(239, 68, 68, 0.1); border-radius: 8px; border: 1px solid #ef4444;">Greška: ' + generateData.message + '</p>';
+                                    button.disabled = false;
+                                    button.textContent = 'Generiši raspored časova';
+                                    button.classList.remove('loading');
+                                    return;
+                                }
+
+                                // Ako je uspešno generisano, prikaži poruku o uspehu
+                                statusDiv.innerHTML = '<p style="color: #22c55e; padding: 12px; background: rgba(34, 197, 94, 0.1); border-radius: 8px; border: 1px solid #22c55e;">✓ ' + generateData.message + '</p>';
+
+                                // Sada učitaj i prikaži generisani raspored
+                                container.style.display = 'block';
+
+                                const res = await fetch('admin_panel.php?action=getschedule');
+                                const data = await res.json();
+                                if (data.error) {
+                                    statusDiv.innerHTML += '<p style="color: #ef4444; margin-top: 10px;">Greška pri učitavanju rasporeda: ' + data.error + '</p>';
+                                    button.disabled = false;
+                                    button.textContent = 'Generiši raspored časova';
+                                    button.classList.remove('loading');
+                                    return;
+                                }
+                                // Nova struktura: data.schedules[scheduleId][semester] = events[]
+                                // data.schedule_ids = [id1, id2, ...]
+
+                                const schedules = data.schedules || {};
+                                const scheduleIds = data.schedule_ids || [];
+
+                                if (scheduleIds.length === 0) {
+                                    container.innerHTML = '<p>Nema rasporeda u bazi.</p>';
+                                    button.disabled = false;
+                                    button.textContent = 'Generiši raspored časova';
+                                    button.classList.remove('loading');
+                                    return;
+                                }
+
+                                // Skupi sve događaje za vremenske slotove
+                                const allEvents = [];
+                                scheduleIds.forEach(sid => {
+                                    Object.keys(schedules[sid] || {}).forEach(sem => {
+                                        (schedules[sid][sem] || []).forEach(ev => allEvents.push(ev));
+                                    });
+                                });
+
+                                const timeSlots = Array.from(
+                                    new Set(allEvents.map(e => e.start + '-' + e.end))
+                                ).sort();
+
+                                // State: zimski i ljetnji indeksi
+                                let currentWinterIndex = 0;
+                                let currentSummerIndex = 0;
+
+                                // --- MASTER CONTROLS (ZIMSKI / LJETNJI) ---
+                                const controlsDiv = document.createElement('div');
+                                controlsDiv.style.display = 'flex';
+                                controlsDiv.style.justifyContent = 'space-around';
+                                controlsDiv.style.flexWrap = 'wrap';
+                                controlsDiv.style.marginBottom = '30px';
+                                controlsDiv.style.padding = '20px';
+                                controlsDiv.style.background = '#2d2d2d';
+                                controlsDiv.style.borderRadius = '10px';
+                                controlsDiv.style.border = '1px solid #444';
+
+                                container.appendChild(controlsDiv);
+
+                                // Lock state management
+                                let isScheduleLocked = false; //zakljucavanje rasporeda
+                                const allArrowButtons = []; //zakljucavanje rasporeda
+
+                                function createControlGroup(title, isWinter) {
+                                    const group = document.createElement('div');
+                                    group.style.textAlign = 'center';
+                                    group.style.margin = '10px';
+
+                                    const label = document.createElement('h3');
+                                    label.textContent = title;
+                                    label.style.marginBottom = '10px';
+                                    label.style.color = '#e5e7eb';
+
+                                    const controls = document.createElement('div');
+                                    controls.style.display = 'flex';
+                                    controls.style.alignItems = 'center';
+                                    controls.style.gap = '15px';
+                                    controls.style.justifyContent = 'center';
+
+                                    const leftBtn = document.createElement('button');
+                                    leftBtn.innerHTML = '◀';
+                                    leftBtn.className = 'nav-arrow';
+                                    leftBtn.style.cssText = 'font-size: 20px; padding: 5px 12px; cursor: pointer; border: none; background: #3b82f6; color: white; border-radius: 6px;';
+                                    allArrowButtons.push(leftBtn); //zakljucavanje rasporeda
+
+                                    const info = document.createElement('span');
+                                    info.innerHTML = 'Verzija 1';
+                                    info.style.fontWeight = 'bold';
+
+                                    const rightBtn = document.createElement('button');
+                                    rightBtn.innerHTML = '▶';
+                                    rightBtn.className = 'nav-arrow';
+                                    rightBtn.style.cssText = 'font-size: 20px; padding: 5px 12px; cursor: pointer; border: none; background: #3b82f6; color: white; border-radius: 6px;';
+                                    allArrowButtons.push(rightBtn); //zakljucavanje rasporeda
+
+
+                                    const updateState = () => {
+                                        const idx = isWinter ? currentWinterIndex : currentSummerIndex;
+                                        info.innerHTML = 'Verzija ' + (idx + 1);
+
+                                        //zakljucavanje rasporeda
+                                        leftBtn.disabled = idx === 0 || isScheduleLocked;
+                                        leftBtn.style.opacity = (idx === 0 || isScheduleLocked) ? '0.5' : '1';
+
+                                        rightBtn.disabled = idx === scheduleIds.length - 1 || isScheduleLocked;
+                                        rightBtn.style.opacity = (idx === scheduleIds.length - 1 || isScheduleLocked) ? '0.5' : '1';
+
+
+                                        leftBtn.disabled = idx === 0;
+                                        leftBtn.style.opacity = idx === 0 ? '0.5' : '1';
+
+                                        rightBtn.disabled = idx === scheduleIds.length - 1;
+                                        rightBtn.style.opacity = idx === scheduleIds.length - 1 ? '0.5' : '1';
+
+                                        // Update relevant tables
+                                        const sems = isWinter ? [1, 3, 5] : [2, 4, 6];
+                                        sems.forEach(s => updateSemesterTable(s));
+                                    };
+
+                                    leftBtn.addEventListener('click', () => {
+                                        if (isScheduleLocked) return; //zakljucavanje rasporeda
+                                        if (isWinter) {
+                                            if (currentWinterIndex > 0) currentWinterIndex--;
+                                        } else {
+                                            if (currentSummerIndex > 0) currentSummerIndex--;
+                                        }
+                                        updateState();
+                                    });
+
+                                    rightBtn.addEventListener('click', () => {
+                                        if (isScheduleLocked) return; //zakljucavanje rasporeda
+                                        if (isWinter) {
+                                            if (currentWinterIndex < scheduleIds.length - 1) currentWinterIndex++;
+                                        } else {
+                                            if (currentSummerIndex < scheduleIds.length - 1) currentSummerIndex++;
+                                        }
+                                        updateState();
+                                    });
+
+                                    // Initial call
+                                    setTimeout(updateState, 0);
+
+                                    controls.appendChild(leftBtn);
+                                    controls.appendChild(info);
+                                    controls.appendChild(rightBtn);
+
+                                    group.appendChild(label);
+                                    group.appendChild(controls);
+                                    return group;
+                                }
+
+                                controlsDiv.appendChild(createControlGroup('Zimski Semestri (1, 3, 5)', true));
+
+                                //Zakljucavanje rasporeda - START
+                                // Lock button
+                                const lockBtnContainer = document.createElement('div');
+                                lockBtnContainer.style.display = 'flex';
+                                lockBtnContainer.style.alignItems = 'center';
+                                lockBtnContainer.style.justifyContent = 'center';
+                                lockBtnContainer.style.margin = '10px';
+
+                                const lockBtn = document.createElement('button');
+                                lockBtn.textContent = '🔓 Zakljucaj';
+                                lockBtn.style.cssText = 'padding: 10px 20px; font-size: 14px; cursor: pointer; border: 2px solid #f59e0b; background: #f59e0b; color: white; border-radius: 6px; font-weight: bold; transition: all 0.3s ease;';
+
+                                lockBtn.addEventListener('click', async () => {
+                                    // Determine winter and summer schedule IDs based on what's available
+                                    // If we have multiple schedules, use different ones for winter/summer
+                                    // If only 1 schedule, use it for both
+                                    let winterScheduleId, summerScheduleId;
+
+                                    if (scheduleIds.length >= 2) {
+                                        // Multiple schedules: use first for winter, second for summer
+                                        winterScheduleId = scheduleIds[currentWinterIndex] || scheduleIds[0];
+                                        summerScheduleId = scheduleIds[currentSummerIndex] || scheduleIds[1] || scheduleIds[0];
+                                    } else if (scheduleIds.length === 1) {
+                                        // Only 1 schedule: use it for both
+                                        winterScheduleId = scheduleIds[0];
+                                        summerScheduleId = scheduleIds[0];
+                                    } else {
+                                        // No schedules at all
+                                        console.error('✗ No schedule IDs found');
+                                        alert('Greška: Nema dostupnih rasporeda.');
+                                        return;
+                                    }
+
+                                    // console.log('=== LOCK TOGGLE ===');
+                                    // console.log('All Available Schedule IDs:', scheduleIds);
+                                    // console.log('Winter Index:', currentWinterIndex);
+                                    // console.log('Summer Index:', currentSummerIndex);
+                                    // console.log('Winter Schedule ID to lock:', winterScheduleId);
+                                    // console.log('Summer Schedule ID to lock:', summerScheduleId);
+
+                                    isScheduleLocked = !isScheduleLocked;
+
+                                    // console.log('Winter scheduleId: ',winterScheduleId);
+                                    // console.log('Summer schedule Id: ',summerScheduleId);
+                                    // console.log('Is Locked:', isScheduleLocked);
+                                    // console.log('==================');
+
+
+                                    // Make AJAX call to API
+                                    try {
+                                        const payload = {
+                                            action: 'toggle_lock',
+                                            is_locked: isScheduleLocked,
+                                            winter_schedule_id: winterScheduleId,
+                                            summer_schedule_id: summerScheduleId
+                                        };
+
+                                        // console.log('Sending payload:', JSON.stringify(payload, null, 2));
+
+                                        const response = await fetch('../../src/api/schedule_lock.php', {
+                                            method: 'POST',
+                                            headers: {
+                                                'Content-Type': 'application/json',
+                                            },
+                                            body: JSON.stringify(payload)
+                                        });
+
+                                        const data = await response.json();
+                                        console.log('API Response:', data);
+
+                                        if (data.success) {
+                                            // console.log('✓ Lock state saved:', data.message);
+
+                                            // Update button appearance AFTER API succeeds
+                                            if (isScheduleLocked) {
+                                                lockBtn.textContent = '🔒 Otkljucaj';
+                                                lockBtn.style.background = '#ef4444';
+                                                lockBtn.style.borderColor = '#ef4444';
+                                            } else {
+                                                lockBtn.textContent = '🔓 Zakljucaj';
+                                                lockBtn.style.background = '#f59e0b';
+                                                lockBtn.style.borderColor = '#f59e0b';
+                                            }
+
+                                            // Update all arrow buttons AFTER API succeeds
+                                            allArrowButtons.forEach(btn => {
+                                                if (isScheduleLocked) {
+                                                    btn.disabled = true;
+                                                    btn.style.opacity = '0.5';
+                                                    btn.style.cursor = 'not-allowed';
+                                                } else {
+                                                    btn.disabled = false;
+                                                    btn.style.opacity = '1';
+                                                    btn.style.cursor = 'pointer';
+                                                }
+                                            });
+                                        } else {
+                                            console.error('✗ Failed to save lock state:', data.message);
+                                            // Revert the toggle if API call failed
+                                            isScheduleLocked = !isScheduleLocked;
+                                        }
+                                    } catch (error) {
+                                        console.error('✗ API call error:', error);
+                                        // Revert the toggle if API call failed
+                                        isScheduleLocked = !isScheduleLocked;
+                                    }
+                                });
+
+                                lockBtnContainer.appendChild(lockBtn);
+                                controlsDiv.appendChild(lockBtnContainer);
+
+                                //Zakljucavanje rasporeda - END
+
+                                controlsDiv.appendChild(createControlGroup('Ljetnji Semestri (2, 4, 6)', false));
+
+                                function enableTdSwap(tableEl) {
+                                    const rows = tableEl.querySelectorAll('tbody tr');
+
+                                    rows.forEach((tr) => {
+                                        new Sortable(tr, {
+                                            group: {name: 'cells', pull: true, put: true},
+                                            animation: 150,
+                                            draggable: 'td',
+
+                                            filter: '.no-drag',
+                                            preventOnFilter: true,
+
+                                            swap: true,
+                                            swapClass: 'td-swap-hl',
+
+                                            fallbackOnBody: true,
+                                            swapThreshold: 0.65,
+                                            invertSwap: true
+                                        });
+                                    });
+                                }
+
+
+                                function buildTableForSemester(sem, events, scheduleIdx, totalSchedules) {
+                                    const wrapper = document.createElement('div');
+                                    wrapper.className = 'semester-wrapper';
+                                    wrapper.id = 'semester-wrapper-' + sem;
+                                    wrapper.style.marginBottom = '40px';
+                                    wrapper.style.border = '1px solid #444';
+                                    wrapper.style.borderRadius = '12px';
+                                    wrapper.style.padding = '20px';
+                                    wrapper.style.background = 'transparent';
+
+                                    // NOVI HEADER BEZ STRELICA (Kontrola je sada na vrhu)
+                                    const header = document.createElement('div');
+                                    header.style.textAlign = 'center';
+                                    header.style.marginBottom = '15px';
+
+                                    const h3 = document.createElement('h3');
+                                    const semType = (sem % 2 === 1) ? 'Zimski semestar' : 'Ljetnji semestar';
+                                    h3.style.margin = '0';
+                                    h3.innerHTML = sem + '. semestar – ' + semType +
+                                        '<br><small style="color: #666; font-weight: normal;">(Prikazana verzija: ' + (scheduleIdx + 1) + ')</small>';
+
+                                    header.appendChild(h3);
+                                    wrapper.appendChild(header);
+
+                                    // Tabela
+                                    if (!events || events.length === 0) {
+                                        const noData = document.createElement('p');
+                                        noData.textContent = 'Nema podataka za ovaj raspored.';
+                                        noData.style.textAlign = 'center';
+                                        noData.style.color = '#999';
+                                        wrapper.appendChild(noData);
+                                    } else {
+                                        const table = document.createElement('table');
+                                        table.border = '1';
+                                        table.cellPadding = '5';
+                                        table.style.width = '100%';
+                                        table.style.borderCollapse = 'collapse';
+                                        table.className = 'schedule-table';
+                                        table.setAttribute('data-semester', sem);
+
+                                        const thead = document.createElement('thead');
+                                        const trHead = document.createElement('tr');
+                                        const thTime = document.createElement('th');
+                                        thTime.textContent = 'Vrijeme';
+                                        trHead.appendChild(thTime);
+                                        days.forEach(d => {
+                                            const th = document.createElement('th');
+                                            th.textContent = d;
+                                            trHead.appendChild(th);
+                                        });
+                                        thead.appendChild(trHead);
+                                        table.appendChild(thead);
+
+                                        const tbody = document.createElement('tbody');
+
+                                        timeSlots.forEach(slot => {
+                                            const hasAnyEvent = events.some(ev =>
+                                                (ev.start + '-' + ev.end) === slot
+                                            );
+                                            if (!hasAnyEvent) return;
+
+                                            const tr = document.createElement('tr');
+                                            const tdTime = document.createElement('td');
+                                            tdTime.textContent = slot;
+                                            tdTime.classList.add('no-drag');
+                                            tr.appendChild(tdTime);
+
+                                            for (let d = 1; d <= 5; d++) {
+                                                const td = document.createElement('td');
+                                                const cellEvents = events.filter(ev =>
+                                                    ev.day === d && (ev.start + '-' + ev.end) === slot
+                                                );
+                                                if (cellEvents.length > 0) {
+                                                    td.innerHTML = cellEvents
+                                                        .map(ev => ev.course + ' (' + ev.room + ')')
+                                                        .join('<br>');
+                                                }
+                                                tr.appendChild(td);
+                                            }
+
+                                            tbody.appendChild(tr);
+                                        });
+
+                                        table.appendChild(tbody);
+                                        wrapper.appendChild(table);
+                                        enableTdSwap(table);
+
+                                        // PDF dugme
+                                        const pdfBtn = document.createElement('button');
+                                        pdfBtn.textContent = 'Sačuvaj kao PDF';
+                                        pdfBtn.className = 'action-button add-button';
+                                        pdfBtn.style.marginTop = '10px';
+                                        pdfBtn.addEventListener('click', () => {
+                                            saveTableAsPDF(table, sem);
+                                        });
+                                        wrapper.appendChild(pdfBtn);
+                                    }
+
+                                    return wrapper;
+                                }
+
+                                function updateSemesterTable(sem) {
+                                    const oldWrapper = document.getElementById('semester-wrapper-' + sem);
+                                    if (!oldWrapper) return;
+
+                                    // Determine if winter or summer
+                                    const isWinter = (sem % 2 !== 0);
+                                    const schedIdx = isWinter ? currentWinterIndex : currentSummerIndex;
+
+                                    const schedId = scheduleIds[schedIdx];
+                                    const events = (schedules[schedId] && schedules[schedId][sem]) || [];
+
+                                    const newWrapper = buildTableForSemester(sem, events, schedIdx, scheduleIds.length);
+                                    oldWrapper.replaceWith(newWrapper);
+                                }
+
+                                // Helper function for Exams (List View)
+                                function buildSimpleScheduleTable(titleText, events, idSuffix) {
+                                    const wrapper = document.createElement('div');
+                                    wrapper.className = 'semester-wrapper';
+                                    wrapper.id = 'semester-wrapper-' + idSuffix;
+                                    wrapper.style.marginTop = '60px';
+                                    wrapper.style.marginBottom = '40px';
+                                    wrapper.style.border = '1px solid #444';
+                                    wrapper.style.borderRadius = '12px';
+                                    wrapper.style.padding = '20px';
+                                    wrapper.style.background = 'transparent';
+
+                                    const header = document.createElement('div');
+                                    header.style.textAlign = 'center';
+                                    header.style.marginBottom = '15px';
+
+                                    const h3 = document.createElement('h3');
+                                    h3.style.margin = '0';
+                                    h3.innerHTML = titleText;
+                                    header.appendChild(h3);
+                                    wrapper.appendChild(header);
+
+                                    if (!events || events.length === 0) {
+                                        const p = document.createElement('p');
+                                        p.textContent = 'Nema zakazanih kolokvijuma.';
+                                        p.style.textAlign = 'center';
+                                        p.style.color = '#999';
+                                        wrapper.appendChild(p);
+                                        return wrapper;
+                                    }
+
+                                    const table = document.createElement('table');
+                                    table.border = '1';
+                                    table.cellPadding = '5';
+                                    table.style.width = '100%';
+                                    table.style.borderCollapse = 'collapse';
+                                    table.className = 'schedule-table';
+
+                                    const thead = document.createElement('thead');
+                                    const trHead = document.createElement('tr');
+                                    ['Datum', 'Dan', 'Vrijeme', 'Predmet', 'Sala'].forEach(text => {
+                                        const th = document.createElement('th');
+                                        th.textContent = text;
+                                        // Reuse existing styles logic via class, but enforce headers
+                                        // trHead.appendChild(th);
+                                    });
+
+                                    // Or better, stick to valid DOM
+                                    const headers = ['Datum', 'Dan', 'Vrijeme', 'Predmet', 'Sala'];
+                                    headers.forEach(h => {
+                                        const th = document.createElement('th');
+                                        th.textContent = h;
+                                        trHead.appendChild(th);
+                                    });
+
+                                    thead.appendChild(trHead);
+                                    table.appendChild(thead);
+
+                                    const tbody = document.createElement('tbody');
+
+                                    // Sort events by date and time
+                                    events.sort((a, b) => {
+                                        const dateA = a.date || '';
+                                        const dateB = b.date || '';
+                                        if (dateA !== dateB) return dateA < dateB ? -1 : 1;
+                                        return a.start.localeCompare(b.start);
+                                    });
+
+                                    events.forEach(ev => {
+                                        const tr = document.createElement('tr');
+
+                                        // Date
+                                        const tdDate = document.createElement('td');
+                                        tdDate.textContent = ev.date || '-';
+                                        tr.appendChild(tdDate);
+
+                                        // Day
+                                        const tdDay = document.createElement('td');
+                                        tdDay.textContent = ev.day;
+                                        tr.appendChild(tdDay);
+
+                                        // Time
+                                        const tdTime = document.createElement('td');
+                                        tdTime.textContent = ev.start + ' - ' + ev.end;
+                                        tr.appendChild(tdTime);
+
+                                        // Course
+                                        const tdCourse = document.createElement('td');
+                                        tdCourse.textContent = ev.course;
+                                        tr.appendChild(tdCourse);
+
+                                        // Room
+                                        const tdRoom = document.createElement('td');
+                                        tdRoom.textContent = ev.room;
+                                        tr.appendChild(tdRoom);
+
+                                        tbody.appendChild(tr);
+                                    });
+
+                                    table.appendChild(tbody);
+                                    wrapper.appendChild(table);
+
+                                    // Print button for exams
+                                    const pdfBtn = document.createElement('button');
+                                    pdfBtn.textContent = 'Sačuvaj kolokvijume kao PDF';
+                                    pdfBtn.className = 'action-button add-button';
+                                    pdfBtn.style.marginTop = '10px';
+                                    pdfBtn.addEventListener('click', () => {
+                                        saveTableAsPDF(table, 'kolokvijumi');
+                                    });
+                                    wrapper.appendChild(pdfBtn);
+
+                                    return wrapper;
+                                }
+
+                                // Inicijalni prikaz - svi semestri sa prvim rasporedom
+                                [1, 3, 5, 2, 4, 6].forEach(sem => {
+                                    const schedId = scheduleIds[0];
+                                    const events = (schedules[schedId] && schedules[schedId][sem]) || [];
+                                    const wrapper = buildTableForSemester(sem, events, 0, scheduleIds.length);
+                                    container.appendChild(wrapper);
+                                });
+
+                                // Dugme za PDF svih
+                                const pdfAllBtn = document.createElement('button');
+                                pdfAllBtn.textContent = 'Sačuvaj kompletan raspored kao PDF';
+                                pdfAllBtn.className = 'action-button add-button';
+                                pdfAllBtn.style.marginTop = '20px';
+                                pdfAllBtn.addEventListener('click', saveFullScheduleAsPDF);
+                                container.appendChild(pdfAllBtn);
+
+                                // --- EXAM TABLE (Raspored Kolokvijuma) ---
+                                if (data.exams && data.exams.length > 0) {
+                                    const exWrapper = buildSimpleScheduleTable('Raspored kolokvijuma (Ispitni rokovi)', data.exams, 'exams');
+                                    container.appendChild(exWrapper);
+                                }
+
+                                // Vrati dugme u normalno stanje
+                                button.disabled = false;
+                                button.textContent = 'Generiši raspored časova';
+                                button.classList.remove('loading');
+
+                            } catch (e) {
+                                statusDiv.innerHTML = '<p style="color: #ef4444; padding: 12px; background: rgba(239, 68, 68, 0.1); border-radius: 8px; border: 1px solid #ef4444;">Greška pri generisanju rasporeda: ' + e.message + '</p>';
+                                button.disabled = false;
+                                button.textContent = 'Generiši raspored časova';
+                                button.classList.remove('loading');
+                            }
+                        });
+                    </script>
+                    <script>
+                        function saveFullScheduleAsPDF() {
+                            const {jsPDF} = window.jspdf;
+                            const doc = new jsPDF('landscape', 'pt', 'a4');
+
+                            let y = 40;
+
+                            doc.setFontSize(18);
+                            doc.text('Kompletan raspored časova', 40, y);
+                            y += 30;
+
+                            const tables = document.querySelectorAll('.schedule-table');
+
+                            tables.forEach((table, index) => {
+                                if (index > 0) {
+                                    doc.addPage();
+                                    y = 40;
+
+                                }
+
+                                tbody.appendChild(tr);
+                            });
+
+                            table.appendChild(tbody);
+                            wrapper.appendChild(table);
+                            enableTdSwap(table);
+
+                            const pdfBtn = document.createElement('button');
+                            pdfBtn.textContent = 'Sačuvaj kao PDF';
+                            pdfBtn.className = 'action-button add-button';
+                            pdfBtn.style.marginTop = '10px';
+                            pdfBtn.addEventListener('click', () => {
+                                saveTableAsPDF(table, sem);
+                            });
+                            wrapper.appendChild(pdfBtn);
+
+                            return wrapper;
+                        }
+
+                        function updateSemesterTable(sem) {
+                            const oldWrapper = document.getElementById('semester-wrapper-' + sem);
+                            if (!oldWrapper) return;
+
+                            const isWinter = (sem % 2 !== 0);
+                            const schedIdx = isWinter ? currentWinterIndex : currentSummerIndex;
+                            const schedId = scheduleIds[schedIdx];
+                            const events = (schedules[schedId] && schedules[schedId][sem]) || [];
+
+                            const newWrapper = buildTableForSemester(sem, events, schedIdx, scheduleIds.length);
+                            oldWrapper.replaceWith(newWrapper);
+                        }
+
+                        // MASTER CONTROLS
+                        const controlsDiv = document.createElement('div');
+                        controlsDiv.style.display = 'flex';
+                        controlsDiv.style.justifyContent = 'space-around';
+                        controlsDiv.style.flexWrap = 'wrap';
+                        controlsDiv.style.marginBottom = '30px';
+                        controlsDiv.style.padding = '20px';
+                        controlsDiv.style.background = '#2d2d2d';
+                        controlsDiv.style.borderRadius = '10px';
+                        controlsDiv.style.border = '1px solid #444';
+                        container.appendChild(controlsDiv);
+
+                        controlsDiv.appendChild(createControlGroup('Zimski Semestri (1, 3, 5)', true));
+
+                        // Lock button
+                        const lockBtnContainer = document.createElement('div');
+                        lockBtnContainer.style.display = 'flex';
+                        lockBtnContainer.style.alignItems = 'center';
+                        lockBtnContainer.style.justifyContent = 'center';
+                        lockBtnContainer.style.margin = '10px';
+                        const lockBtn = document.createElement('button');
+                        // set initial label/style based on current lock state
+                        if (isScheduleLocked) {
+                            lockBtn.textContent = '🔒 Otključaj';
+                            lockBtn.style.cssText = 'padding: 10px 20px; font-size: 14px; cursor: pointer; border: 2px solid #ef4444; background: #ef4444; color: white; border-radius: 6px; font-weight: bold; transition: all 0.3s ease;';
+                        } else {
+                            lockBtn.textContent = '🔓 Zaključaj';
+                            lockBtn.style.cssText = 'padding: 10px 20px; font-size: 14px; cursor: pointer; border: 2px solid #f59e0b; background: #f59e0b; color: white; border-radius: 6px; font-weight: bold; transition: all 0.3s ease;';
+                        }
+                        lockBtnContainer.appendChild(lockBtn);
+                        // ensure arrow buttons reflect initial lock state
+                        setTimeout(() => {
+                            allArrowButtons.forEach(btn => {
+                                if (isScheduleLocked) {
+                                    btn.disabled = true;
+                                    btn.style.opacity = '0.5';
+                                    btn.style.cursor = 'not-allowed';
+                                } else {
+                                    btn.disabled = false;
+                                    btn.style.opacity = '1';
+                                    btn.style.cursor = 'pointer';
+                                }
+                            });
+                        }, 0);
+
+                        // Lock button click handler (calls server API)
+                        lockBtn.addEventListener('click', async () => {
+                            // Determine winter and summer schedule IDs based on what's available
+                            let winterScheduleId, summerScheduleId;
+                            if (scheduleIds.length >= 2) {
+                                winterScheduleId = scheduleIds[currentWinterIndex] || scheduleIds[0];
+                                summerScheduleId = scheduleIds[currentSummerIndex] || scheduleIds[1] || scheduleIds[0];
+                            } else if (scheduleIds.length === 1) {
+                                winterScheduleId = scheduleIds[0];
+                                summerScheduleId = scheduleIds[0];
+                            } else {
+                                alert('Greška: Nema dostupnih rasporeda za zaključavanje.');
+                                return;
+                            }
+
+                            isScheduleLocked = !isScheduleLocked;
+
+                            try {
+                                const payload = {
+                                    action: 'toggle_lock',
+                                    is_locked: isScheduleLocked,
+                                    winter_schedule_id: winterScheduleId,
+                                    summer_schedule_id: summerScheduleId
+                                };
+
+                                const response = await fetch('../../src/api/schedule_lock.php', {
+                                    method: 'POST',
+                                    headers: {'Content-Type': 'application/json'},
+                                    body: JSON.stringify(payload)
+                                });
+
+                                const data = await response.json();
+                                if (data && data.success) {
+                                    // update UI based on new lock state
+                                    if (isScheduleLocked) {
+                                        lockBtn.textContent = '🔒 Otkljucaj';
+                                        lockBtn.style.background = '#ef4444';
+                                        lockBtn.style.borderColor = '#ef4444';
+                                    } else {
+                                        lockBtn.textContent = '🔓 Zakljucaj';
+                                        lockBtn.style.background = '#f59e0b';
+                                        lockBtn.style.borderColor = '#f59e0b';
+                                    }
+
+                                    allArrowButtons.forEach(btn => {
+                                        if (isScheduleLocked) {
+                                            btn.disabled = true;
+                                            btn.style.opacity = '0.5';
+                                            btn.style.cursor = 'not-allowed';
+                                        } else {
+                                            btn.disabled = false;
+                                            btn.style.opacity = '1';
+                                            btn.style.cursor = 'pointer';
+                                        }
+                                    });
+
+                                    // update global flag so subsequent loads see correct state
+                                    if (window.adminData) window.adminData.schedule_locked = isScheduleLocked;
+                                } else {
+                                    console.error('Failed to save lock state', data && data.message);
+                                    // revert
+                                    isScheduleLocked = !isScheduleLocked;
+                                    alert('Neuspeh pri čuvanju statusa zaključavanja: ' + (data && data.message ? data.message : 'Nepoznata greška'));
+                                }
+                            } catch (err) {
+                                console.error('API error', err);
+                                isScheduleLocked = !isScheduleLocked;
+                                alert('Greška pri povezivanju sa serverom.');
+                            }
+                        });
+                        controlsDiv.appendChild(lockBtnContainer);
+
+                        controlsDiv.appendChild(createControlGroup('Ljetnji Semestri (2, 4, 6)', false));
+
+                        // Initial render for all semesters
+                        [1, 3, 5, 2, 4, 6].forEach(sem => {
+                            const schedId = scheduleIds[0];
+                            const events = (schedules[schedId] && schedules[schedId][sem]) || [];
+                            const wrapper = buildTableForSemester(sem, events, 0, scheduleIds.length);
+                            container.appendChild(wrapper);
+                        });
+
+                        // PDF all
+                        const pdfAllBtn = document.createElement('button');
+                        pdfAllBtn.textContent = 'Sačuvaj kompletan raspored kao PDF';
+                        pdfAllBtn.className = 'action-button add-button';
+                        pdfAllBtn.style.marginTop = '20px';
+                        pdfAllBtn.addEventListener('click', saveFullScheduleAsPDF);
+                        container.appendChild(pdfAllBtn);
                         }
 
                         (function () {

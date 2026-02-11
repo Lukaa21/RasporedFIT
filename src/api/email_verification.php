@@ -26,12 +26,12 @@ function sendVerificationEmail($emailAddress, $verificationCode) {
         $mail->isSMTP();
         $mail->Host = 'smtp-relay.brevo.com'; 
         $mail->SMTPAuth = true;
-        $mail->Username = '9d2675001@smtp-brevo.com';
-        $mail->Password = 'Sa83rFy5AfqcbTHN'; 
+        $mail->Username = 'a22987001@smtp-brevo.com';
+        $mail->Password = 'G6xQXvBk3F5RcPKp'; 
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
         $mail->Port = 587;
 
-        $mail->setFrom('aleksabojovic1b@gmail.com', 'Aleksa Bojovic');
+        $mail->setFrom('luka.dragicevic2004@gmail.com', 'FIT Sistem');
         $mail->addAddress($emailAddress);
 
         $mail->isHTML(false);

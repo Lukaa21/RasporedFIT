@@ -108,6 +108,96 @@ try {
             error_log('Failed to update config.schedule_locked: ' . $e->getMessage());
         }
 
+        // Sync occupancy with locked schedule (FIT) so room usage is reflected
+        $occupancyNote = '';
+        $occupancyDebug = [
+            'active_year_id' => null,
+            'events_found' => 0,
+            'rows_inserted' => 0,
+            'schedule_ids' => [],
+            'semester_map' => []
+        ];
+        try {
+            $yearStmt = $pdo->query("SELECT id FROM academic_year WHERE is_active = TRUE LIMIT 1");
+            $activeYear = $yearStmt->fetch(PDO::FETCH_ASSOC);
+            $activeYearId = $activeYear ? (int)$activeYear['id'] : 0;
+
+            if ($activeYearId === 0) {
+                $fallbackStmt = $pdo->query("SELECT id FROM academic_year ORDER BY id DESC LIMIT 1");
+                $fallbackYear = $fallbackStmt->fetch(PDO::FETCH_ASSOC);
+                $activeYearId = $fallbackYear ? (int)$fallbackYear['id'] : 0;
+            }
+            $occupancyDebug['active_year_id'] = $activeYearId ?: null;
+
+            if ($activeYearId > 0) {
+                $facultyCode = 'FIT';
+                $sourceType = 'SCHEDULE';
+
+                // Clear previous schedule-based occupancy for FIT in this academic year
+                $clearStmt = $pdo->prepare("DELETE FROM room_occupancy WHERE academic_year_id = ? AND faculty_code = ? AND source_type = ?");
+                $clearStmt->execute([$activeYearId, $facultyCode, $sourceType]);
+
+                if ($is_locked) {
+                    $semesterMap = [];
+                    if ($winter_schedule_id === $summer_schedule_id) {
+                        $semesterMap[$winter_schedule_id] = [1, 2, 3, 4, 5, 6];
+                    } else {
+                        $semesterMap[$winter_schedule_id] = [1, 3, 5];
+                        $semesterMap[$summer_schedule_id] = [2, 4, 6];
+                    }
+                    $occupancyDebug['semester_map'] = $semesterMap;
+                    $occupancyDebug['schedule_ids'] = array_values(array_unique(array_filter([$winter_schedule_id, $summer_schedule_id])));
+
+                    $insStmt = $pdo->prepare("
+                        INSERT INTO room_occupancy
+                        (room_id, weekday, start_time, end_time, faculty_code, source_type, academic_year_id, is_active)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, TRUE)
+                    ");
+
+                    foreach ($semesterMap as $scheduleId => $semesters) {
+                        if ($scheduleId <= 0 || empty($semesters)) {
+                            continue;
+                        }
+                        $semPlaceholders = implode(',', array_fill(0, count($semesters), '?'));
+                        $eventsStmt = $pdo->prepare("
+                            SELECT
+                                ae.room_id,
+                                ae.day,
+                                CAST(ae.starts_at AS time) AS start_time,
+                                CAST(ae.ends_at AS time) AS end_time
+                            FROM academic_event ae
+                            JOIN course c ON ae.course_id = c.id
+                            WHERE ae.room_id IS NOT NULL
+                              AND ae.type_enum IN ('LECTURE', 'EXERCISE', 'LAB')
+                              AND ae.schedule_id = ?
+                              AND c.semester IN ($semPlaceholders)
+                        ");
+
+                        $eventsStmt->execute(array_merge([$scheduleId], $semesters));
+                        $events = $eventsStmt->fetchAll(PDO::FETCH_ASSOC);
+                        $occupancyDebug['events_found'] += count($events);
+
+                        foreach ($events as $ev) {
+                            $insStmt->execute([
+                                (int)$ev['room_id'],
+                                (int)$ev['day'],
+                                $ev['start_time'],
+                                $ev['end_time'],
+                                $facultyCode,
+                                $sourceType,
+                                $activeYearId
+                            ]);
+                            $occupancyDebug['rows_inserted']++;
+                        }
+                    }
+                }
+            } else {
+                $occupancyNote = ' (Napomena: nema aktivne akademske godine za zauzetost sala.)';
+            }
+        } catch (PDOException $e) {
+            $occupancyNote = ' (Napomena: zauzetost sala nije ažurirana: ' . $e->getMessage() . ')';
+        }
+
         // Build appropriate message
         if ($winter_schedule_id === $summer_schedule_id) {
             $message = $is_locked 
@@ -118,6 +208,7 @@ try {
                 ? 'Zimski raspored ID ' . $winter_schedule_id . ' (' . $rows_winter . ' termina) i Ljetnji raspored ID ' . $summer_schedule_id . ' (' . $rows_summer . ' termina) su zaključani.' 
                 : 'Zimski raspored ID ' . $winter_schedule_id . ' (' . $rows_winter . ' termina) i Ljetnji raspored ID ' . $summer_schedule_id . ' (' . $rows_summer . ' termina) su otključani.';
         }
+        $message .= $occupancyNote;
 
         echo json_encode([
             'success' => true,
@@ -127,7 +218,8 @@ try {
             'summer_schedule_id' => $summer_schedule_id,
             'winter_rows_affected' => $rows_winter,
             'summer_rows_affected' => $rows_summer,
-            'total_rows_affected' => $total_rows_affected
+            'total_rows_affected' => $total_rows_affected,
+            'occupancy_debug' => $occupancyDebug
         ]);
     } else {
         http_response_code(400);

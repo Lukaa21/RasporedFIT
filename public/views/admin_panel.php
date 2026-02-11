@@ -1211,7 +1211,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <li><a href="?page=sale">Sale</a></li>
                 <li><a href="?page=account">Nalog</a></li>
                 <li><a href="?page=zauzetost">Zauzetost sala</a></li>
-                <li><a href="?page=dogadjaji">Kalendar</a></li>
+                <li><a href="?page=dogadjaji">Informacije</a></li>
                 <li><a href="?page=logout">Rasporedi</a></li>
                 <li><a href="logout.php">Odjavi se</a></li>
             </ul>
@@ -1704,7 +1704,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 case 'dogadjaji':
                     ?>
-                    <h2>Kalendar i događaji</h2>
+                    <h2>Informacije i događaji</h2>
 
                     <!-- Sekcija za Akademsku godinu -->
                     <div style="margin-bottom: 40px; border-bottom: 1px solid #ccc; padding-bottom: 20px;">

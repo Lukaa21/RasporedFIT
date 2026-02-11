@@ -258,6 +258,18 @@ tr:hover {
     background: rgba(255, 255, 255, 0.05);
 }
 
+.schedule-table th,
+.schedule-table td {
+    padding: 10px 12px;
+    line-height: 1.2;
+    vertical-align: middle;
+}
+
+.schedule-table td {
+    white-space: pre-line;
+    height: 72px;
+}
+
 
 .success, .error {
     padding: 12px 16px;

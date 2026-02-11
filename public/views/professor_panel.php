@@ -926,7 +926,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 scheduleCalendar.render();
 // fetch schedule iz professor_api
-                fetch(window.location.pathname + '?action=get_professor_schedule')
+                fetch('api/professor_api.php?action=get_professor_schedule')
                     .then(r => r.json())
                     .then(data => {
                         if (!data || !data.schedules) return;

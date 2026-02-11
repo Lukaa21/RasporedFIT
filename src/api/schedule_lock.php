@@ -130,19 +130,6 @@ try {
             $occupancyDebug['active_year_id'] = $activeYearId ?: null;
 
             if ($activeYearId > 0) {
-                // Ensure source_type constraint accepts SCHEDULE entries
-                $allowedTypes = $pdo->query("SELECT DISTINCT source_type FROM room_occupancy")->fetchAll(PDO::FETCH_COLUMN);
-                $allowedTypes = array_filter($allowedTypes, static function ($val) {
-                    return $val !== null && $val !== '';
-                });
-                $allowedTypes[] = 'MANUAL';
-                $allowedTypes[] = 'SCHEDULE';
-                $allowedTypes = array_values(array_unique($allowedTypes));
-                $allowedSql = implode(',', array_map([$pdo, 'quote'], $allowedTypes));
-
-                $pdo->exec("ALTER TABLE room_occupancy DROP CONSTRAINT IF EXISTS room_occupancy_source_type_check");
-                $pdo->exec("ALTER TABLE room_occupancy ADD CONSTRAINT room_occupancy_source_type_check CHECK (source_type IN ($allowedSql))");
-
                 $facultyCode = 'FIT';
                 $sourceType = 'SCHEDULE';
 
@@ -182,11 +169,7 @@ try {
                         INSERT INTO room_occupancy
                         (room_id, weekday, start_time, end_time, faculty_code, source_type, academic_year_id, is_active)
                         VALUES (?, ?, ?, ?, ?, ?, ?, TRUE)
-                        ON CONFLICT ON CONSTRAINT uq_room_time_unique
-                        DO UPDATE SET
-                            faculty_code = EXCLUDED.faculty_code,
-                            source_type = EXCLUDED.source_type,
-                            is_active = TRUE
+                        ON CONFLICT DO NOTHING
                     ");
 
                     foreach ($semesterMap as $scheduleId => $semesters) {

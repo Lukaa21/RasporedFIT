@@ -1226,7 +1226,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         switch ($page) {
         case 'profesori':
         ?>
-        <h2>Upravljanje Profesorima</h2>
+        <h2>Upravljanje profesorima</h2>
         <button class="action-button add-button" onclick="toggleForm('profesorForm')">+ Dodaj Profesora</button>
         <button class="action-button add-button deadline-button" onclick="toggleForm('deadlineForm')">+ Deadline unosa
             kolokvijuma
@@ -1307,7 +1307,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             case 'predmeti':
                 ?>
 
-                <h2>Upravljanje Predmetima</h2>
+                <h2>Upravljanje predmetima</h2>
 
                 <button class="action-button add-button" onclick="toggleForm('predmetForm')">
                     + Dodaj Predmet
@@ -1498,7 +1498,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             case 'sale':
             ?>
 
-            <h2>Upravljanje Salama</h2>
+            <h2>Upravljanje salama</h2>
             <button class="action-button add-button" onclick="toggleForm('salaForm')">+ Dodaj Salu</button>
 
             <div id="salaForm" class="form-container" style='display: none'>
@@ -1568,7 +1568,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 case 'account':
                     ?>
 
-                    <h2>Upravljanje Nalozima</h2>
+                    <h2>Upravljanje nalozima profeora</h2>
                     <button class="action-button add-button" onclick="toggleForm('accountForm')">+ Dodaj Nalog</button>
 
                     <div id="accountForm" class="form-container" style="display: none">
@@ -1668,7 +1668,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 case 'dogadjaji':
                     ?>
-                    <h2>Upravljanje Kalendarom i Događajima</h2>
+                    <h2>Kalendar i događaji</h2>
 
                     <!-- Sekcija za Akademsku godinu -->
                     <div style="margin-bottom: 40px; border-bottom: 1px solid #ccc; padding-bottom: 20px;">
@@ -1845,7 +1845,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     break;
 
                 case 'pocetna':
-                    echo "<h2>Dobrodošli u Admin Panel</h2>";
+                    echo "<h2>Dobrodošli na admin panel</h2>";
                     echo "<p>Odaberite opciju ispod da generišete raspored časova:</p>";
 
                     echo "<button id='generate-schedule' class='option-button'>Generiši raspored časova</button>";

@@ -341,6 +341,18 @@ function openEditModal(entity, data) {
         const inpSem = document.createElement('input'); inpSem.type = 'number'; inpSem.name = 'semester'; inpSem.min = 1; inpSem.max = 12; inpSem.required = true; inpSem.value = data.semester || '';
         form.appendChild(lblSemester); form.appendChild(inpSem);
 
+        const lblLectures = document.createElement('label'); lblLectures.textContent = 'Fond časova - predavanja (sedmično):';
+        const inpLectures = document.createElement('input'); inpLectures.type = 'number'; inpLectures.name = 'lectures_per_week'; inpLectures.min = 0; inpLectures.step = 1; inpLectures.required = true; inpLectures.value = data.lectures_per_week || 0;
+        form.appendChild(lblLectures); form.appendChild(inpLectures);
+
+        const lblExercises = document.createElement('label'); lblExercises.textContent = 'Fond časova - vježbe (sedmično):';
+        const inpExercises = document.createElement('input'); inpExercises.type = 'number'; inpExercises.name = 'exercises_per_week'; inpExercises.min = 0; inpExercises.step = 1; inpExercises.required = true; inpExercises.value = data.exercises_per_week || 0;
+        form.appendChild(lblExercises); form.appendChild(inpExercises);
+
+        const lblLabs = document.createElement('label'); lblLabs.textContent = 'Fond časova - lab (sedmično):';
+        const inpLabs = document.createElement('input'); inpLabs.type = 'number'; inpLabs.name = 'labs_per_week'; inpLabs.min = 0; inpLabs.step = 1; inpLabs.required = true; inpLabs.value = data.labs_per_week || 0;
+        form.appendChild(lblLabs); form.appendChild(inpLabs);
+
         // checkbox row for proper alignment
         const cbRow = document.createElement('div'); cbRow.className = 'checkbox-row';
         const inpOptional = document.createElement('input'); inpOptional.type = 'checkbox'; inpOptional.name = 'is_optional'; inpOptional.checked = (data.is_optional === '1' || data.is_optional === 'true' || data.is_optional === 'on');
@@ -444,7 +456,6 @@ function openEditModal(entity, data) {
         ruleText.style.fontSize = '12px';
         ruleText.style.color = '#888';
         ruleText.style.marginTop = '5px';
-        ruleText.textContent = '* Max 2 predavača. Ako su 2: jedan mora biti asistent.';
         form.appendChild(ruleText);
 
         renderList(); // Initial render

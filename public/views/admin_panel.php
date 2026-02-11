@@ -446,11 +446,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $semester = $_POST['semester'];
                 $code = $_POST['code'];
                 $is_optional = isset($_POST['is_optional']) ? 1 : 0;
+                $lectures_per_week = isset($_POST['lectures_per_week']) ? (int)$_POST['lectures_per_week'] : 0;
+                $exercises_per_week = isset($_POST['exercises_per_week']) ? (int)$_POST['exercises_per_week'] : 0;
+                $labs_per_week = isset($_POST['labs_per_week']) ? (int)$_POST['labs_per_week'] : 0;
 
                 try {
-                    $stmt = $pdo->prepare("INSERT INTO course (name, semester, code, is_optional, is_active) 
-                                          VALUES (?, ?, ?, ?, TRUE)");
-                    $stmt->execute([$name, $semester, $code, $is_optional]);
+                    $stmt = $pdo->prepare("INSERT INTO course (name, semester, code, is_optional, lectures_per_week, exercises_per_week, labs_per_week, is_active) 
+                                          VALUES (?, ?, ?, ?, ?, ?, ?, TRUE)");
+                    $stmt->execute([$name, $semester, $code, $is_optional, $lectures_per_week, $exercises_per_week, $labs_per_week]);
                     header("Location: ?page=predmeti&success=1&message=" . urlencode("Predmet je uspješno dodat."));
                     exit;
                 } catch (PDOException $e) {
@@ -790,6 +793,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (isset($_POST['code'])) {
                     $fields[] = "code = ?";
                     $params[] = $_POST['code'];
+                }
+                if (isset($_POST['lectures_per_week'])) {
+                    $fields[] = "lectures_per_week = ?";
+                    $params[] = (int)$_POST['lectures_per_week'];
+                }
+                if (isset($_POST['exercises_per_week'])) {
+                    $fields[] = "exercises_per_week = ?";
+                    $params[] = (int)$_POST['exercises_per_week'];
+                }
+                if (isset($_POST['labs_per_week'])) {
+                    $fields[] = "labs_per_week = ?";
+                    $params[] = (int)$_POST['labs_per_week'];
                 }
 
                 // Uvijek ažuriramo checkbox jer HTML forme ne šalju unchecked vrijednosti
@@ -1370,6 +1385,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <label>Semestar:</label>
                         <input type="number" name="semester" min="1" max="6" required>
 
+                        <label>Fond časova - predavanja (sedmično):</label>
+                        <input type="number" name="lectures_per_week" min="0" step="1" value="0" required>
+
+                        <label>Fond časova - vježbe (sedmično):</label>
+                        <input type="number" name="exercises_per_week" min="0" step="1" value="0" required>
+
+                        <label>Fond časova - lab (sedmično):</label>
+                        <input type="number" name="labs_per_week" min="0" step="1" value="0" required>
+
                         <label>
                             <input type="checkbox" name="is_optional"> Izborni
                         </label>
@@ -1386,6 +1410,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         c.code,
         c.semester,
         c.is_optional,
+        c.lectures_per_week,
+        c.exercises_per_week,
+        c.labs_per_week,
         c.is_active,
         cp.professor_id,
         cp.is_assistant,
@@ -1408,6 +1435,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             'code' => $r['code'],
                             'semester' => $r['semester'],
                             'is_optional' => (int)$r['is_optional'],
+                            'lectures_per_week' => (int)$r['lectures_per_week'],
+                            'exercises_per_week' => (int)$r['exercises_per_week'],
+                            'labs_per_week' => (int)$r['labs_per_week'],
                             'is_active' => (int)$r['is_active'],
                             'professors' => []
                         ];
@@ -1430,6 +1460,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <th>Šifra</th>
                         <th>Semestar</th>
                         <th>Obavezni</th>
+                        <th>Predavanja</th>
+                        <th>Vježbe</th>
+                        <th>Lab</th>
                         <th>Profesori</th>
                         <th>Status</th>
                         <th>Akcije</th>
@@ -1442,6 +1475,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <td><?= htmlspecialchars($c['code']) ?></td>
                             <td><?= $c['semester'] ?></td>
                             <td><?= $c['is_optional'] ? 'Ne' : 'Da' ?></td>
+                            <td><?= $c['lectures_per_week'] ?></td>
+                            <td><?= $c['exercises_per_week'] ?></td>
+                            <td><?= $c['labs_per_week'] ?></td>
 
                             <td>
                                 <?= $c['professors']
@@ -1462,6 +1498,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         data-code="<?= htmlspecialchars($c['code']) ?>"
                                         data-semester="<?= $c['semester'] ?>"
                                         data-is_optional="<?= $c['is_optional'] ?>"
+                                        data-lectures_per_week="<?= $c['lectures_per_week'] ?>"
+                                        data-exercises_per_week="<?= $c['exercises_per_week'] ?>"
+                                        data-labs_per_week="<?= $c['labs_per_week'] ?>"
                                         data-professors="<?= htmlspecialchars(json_encode($c['professors'])) ?>">
                                     Uredi
                                 </button>

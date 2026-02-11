@@ -2514,7 +2514,7 @@ public class EventValidationService {
                 result.message = "WARNING: Generated " + successCount + "/6 schedules. " + 
                             allFailedCourses.size() + " courses failed";
             } else {
-                result.message = "OK: All 6 schedules generated successfully";
+                result.message = "Ispravno generisani svi rasporedi";
             }
             return result;
             

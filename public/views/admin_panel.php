@@ -1889,6 +1889,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <script>
                         const days = ['Ponedjeljak', 'Utorak', 'Srijeda', 'Četvrtak', 'Petak'];
 
+                        function formatEventLabel(ev) {
+                            const typeMap = {
+                                LECTURE: 'Predavanje',
+                                EXERCISE: 'Vježbe',
+                                LAB: 'Lab'
+                            };
+                            const typeLabel = typeMap[ev.type] || ev.type || '';
+                            const useAssistants = ev.type === 'EXERCISE' || ev.type === 'LAB';
+                            const nameList = useAssistants ? (ev.assistants || '') : (ev.professors || '');
+                            const fallbackNameList = (!nameList && ev.professors) ? ev.professors : nameList;
+                            const locationLabel = ev.is_online ? 'ONLINE' : (ev.room || '');
+                            const typeLine = typeLabel ? (typeLabel + (locationLabel ? (' (' + locationLabel + ')') : '')) : '';
+                            return [ev.course, fallbackNameList, typeLine].filter(Boolean).join('<br>');
+                        }
+
                         // Shared renderer: builds the full interactive schedule UI from `getschedule` response
                         function renderScheduleData(data) {
                             const statusDiv = document.getElementById('schedule-status');
@@ -2757,9 +2772,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                     ev.day === d && (ev.start + '-' + ev.end) === slot
                                                 );
                                                 if (cellEvents.length > 0) {
-                                                    td.innerHTML = cellEvents
-                                                        .map(ev => ev.course + ' (' + ev.room + ')')
-                                                        .join('<br>');
+                                                    td.innerHTML = cellEvents.map(ev => formatEventLabel(ev)).join('<br>');
                                                 }
                                                 tr.appendChild(td);
                                             }
@@ -3327,11 +3340,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     // 2. Define Time Slots
                     $slots = [
-                        ['08:15', '09:00'], ['09:15', '10:00'], ['10:15', '11:00'],
-                        ['11:15', '12:00'], ['12:15', '13:00'], ['13:15', '14:00'],
-                        ['14:15', '15:00'], ['15:15', '16:00'], ['16:15', '17:00'],
-                        ['17:15', '18:00'], ['18:15', '19:00'], ['19:15', '20:00'],
-                        ['20:15', '21:00']
+                        ['08:00', '09:00'], ['09:00', '10:00'], ['10:00', '11:00'],
+                        ['11:00', '12:00'], ['12:00', '13:00'], ['13:00', '14:00'],
+                        ['14:00', '15:00'], ['15:00', '16:00'], ['16:00', '17:00'],
+                        ['17:00', '18:00'], ['18:00', '19:00'], ['19:00', '20:00'],
+                        ['20:00', '21:00']
                     ];
 
                     // 3. Get Rooms

@@ -130,6 +130,19 @@ try {
             $occupancyDebug['active_year_id'] = $activeYearId ?: null;
 
             if ($activeYearId > 0) {
+                // Ensure source_type constraint accepts SCHEDULE entries
+                $allowedTypes = $pdo->query("SELECT DISTINCT source_type FROM room_occupancy")->fetchAll(PDO::FETCH_COLUMN);
+                $allowedTypes = array_filter($allowedTypes, static function ($val) {
+                    return $val !== null && $val !== '';
+                });
+                $allowedTypes[] = 'MANUAL';
+                $allowedTypes[] = 'SCHEDULE';
+                $allowedTypes = array_values(array_unique($allowedTypes));
+                $allowedSql = implode(',', array_map([$pdo, 'quote'], $allowedTypes));
+
+                $pdo->exec("ALTER TABLE room_occupancy DROP CONSTRAINT IF EXISTS room_occupancy_source_type_check");
+                $pdo->exec("ALTER TABLE room_occupancy ADD CONSTRAINT room_occupancy_source_type_check CHECK (source_type IN ($allowedSql))");
+
                 $facultyCode = 'FIT';
                 $sourceType = 'SCHEDULE';
 
@@ -138,6 +151,23 @@ try {
                 $clearStmt->execute([$activeYearId, $facultyCode, $sourceType]);
 
                 if ($is_locked) {
+                    $slots = [
+                        ['08:15', '09:00'], ['09:15', '10:00'], ['10:15', '11:00'],
+                        ['11:15', '12:00'], ['12:15', '13:00'], ['13:15', '14:00'],
+                        ['14:15', '15:00'], ['15:15', '16:00'], ['16:15', '17:00'],
+                        ['17:15', '18:00'], ['18:15', '19:00'], ['19:15', '20:00'],
+                        ['20:15', '21:00']
+                    ];
+                    $toMinutes = static function ($timeValue) {
+                        if ($timeValue === null) {
+                            return null;
+                        }
+                        $timeStr = substr((string)$timeValue, 0, 5);
+                        if (!preg_match('/^(\d{2}):(\d{2})$/', $timeStr, $m)) {
+                            return null;
+                        }
+                        return ((int)$m[1]) * 60 + (int)$m[2];
+                    };
                     $semesterMap = [];
                     if ($winter_schedule_id === $summer_schedule_id) {
                         $semesterMap[$winter_schedule_id] = [1, 2, 3, 4, 5, 6];
@@ -152,6 +182,11 @@ try {
                         INSERT INTO room_occupancy
                         (room_id, weekday, start_time, end_time, faculty_code, source_type, academic_year_id, is_active)
                         VALUES (?, ?, ?, ?, ?, ?, ?, TRUE)
+                        ON CONFLICT ON CONSTRAINT uq_room_time_unique
+                        DO UPDATE SET
+                            faculty_code = EXCLUDED.faculty_code,
+                            source_type = EXCLUDED.source_type,
+                            is_active = TRUE
                     ");
 
                     foreach ($semesterMap as $scheduleId => $semesters) {
@@ -162,7 +197,17 @@ try {
                         $eventsStmt = $pdo->prepare("
                             SELECT
                                 ae.room_id,
-                                ae.day,
+                                CASE
+                                    WHEN ae.day ~ '^[0-9]+$' THEN CAST(ae.day AS int)
+                                    WHEN lower(ae.day) IN ('ponedeljak', 'ponedjeljak') THEN 1
+                                    WHEN lower(ae.day) IN ('utorak') THEN 2
+                                    WHEN lower(ae.day) IN ('srijeda', 'sreda') THEN 3
+                                    WHEN lower(ae.day) IN ('cetvrtak', 'četvrtak') THEN 4
+                                    WHEN lower(ae.day) IN ('petak') THEN 5
+                                    WHEN lower(ae.day) IN ('subota') THEN 6
+                                    WHEN lower(ae.day) IN ('nedjelja', 'nedelja') THEN 7
+                                    ELSE NULL
+                                END AS weekday,
                                 CAST(ae.starts_at AS time) AS start_time,
                                 CAST(ae.ends_at AS time) AS end_time
                             FROM academic_event ae
@@ -178,16 +223,36 @@ try {
                         $occupancyDebug['events_found'] += count($events);
 
                         foreach ($events as $ev) {
-                            $insStmt->execute([
-                                (int)$ev['room_id'],
-                                (int)$ev['day'],
-                                $ev['start_time'],
-                                $ev['end_time'],
-                                $facultyCode,
-                                $sourceType,
-                                $activeYearId
-                            ]);
-                            $occupancyDebug['rows_inserted']++;
+                            $weekday = isset($ev['weekday']) ? (int)$ev['weekday'] : 0;
+                            if ($weekday < 1 || $weekday > 7) {
+                                continue;
+                            }
+                            $eventStart = $toMinutes($ev['start_time']);
+                            $eventEnd = $toMinutes($ev['end_time']);
+                            if ($eventStart === null || $eventEnd === null) {
+                                continue;
+                            }
+
+                            foreach ($slots as $slot) {
+                                $slotStart = $toMinutes($slot[0]);
+                                $slotEnd = $toMinutes($slot[1]);
+                                if ($slotStart === null || $slotEnd === null) {
+                                    continue;
+                                }
+                                // overlap check: slot intersects event interval
+                                if ($slotStart < $eventEnd && $slotEnd > $eventStart) {
+                                    $insStmt->execute([
+                                        (int)$ev['room_id'],
+                                        $weekday,
+                                        $slot[0],
+                                        $slot[1],
+                                        $facultyCode,
+                                        $sourceType,
+                                        $activeYearId
+                                    ]);
+                                    $occupancyDebug['rows_inserted']++;
+                                }
+                            }
                         }
                     }
                 }

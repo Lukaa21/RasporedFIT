@@ -980,7 +980,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 scheduleCalendar = new FullCalendar.Calendar(container, {
                     initialView: 'timeGridWeek',
-                    locale: 'sr',
+                    locale: 'sr-latin',
                     firstDay: 1,
                     hiddenDays: [0, 6],
                     allDaySlot: false,

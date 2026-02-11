@@ -1,6 +1,7 @@
 <?php
 $env = parse_ini_file(__DIR__ . '/../.env');
 
+
 $dsn = sprintf(
     'pgsql:host=%s;port=%s;dbname=%s;%s',
     $env['DB_HOST'],

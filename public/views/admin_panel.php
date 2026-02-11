@@ -1663,7 +1663,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 echo "<td>" . htmlspecialchars($row['username']) . "</td>";
                                 echo "<td>" . htmlspecialchars($row['role_enum']) . "</td>";
                                 // Pokazujemo ime profesora i, ako postoji, njegov email
-                                $profDisplay = htmlspecialchars($row['professor_name']);
+                                $profDisplay = htmlspecialchars($row['professor_name'] ?? '');
                                 if (!empty($row['professor_email'])) {
                                     $profDisplay .= ' (' . htmlspecialchars($row['professor_email']) . ')';
                                 }

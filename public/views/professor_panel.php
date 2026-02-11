@@ -28,7 +28,7 @@ if (!isset($_SESSION['professor_id'])) {
 $successMessage = null;
 $errorMessage = null;
 // profesor id iz sesije
-$professorId = (int) $_SESSION['professor_id'];
+$professorId = (int)$_SESSION['professor_id'];
 // ucitavanje podataka o profesoru
 $stmt = $pdo->prepare("
     SELECT p.id, p.full_name, p.email, u.username
@@ -58,6 +58,7 @@ function buildUsernameFromFullName(string $fullName): string
 
     return $first . '.' . $last;
 }
+
 // ucitavanje postojece raspolozivosti profesora
 $stmt = $pdo->prepare("
     SELECT weekday, start_time, end_time
@@ -100,8 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
         }
-    }
-    // akcija: update passworda
+    } // akcija: update passworda
     elseif ($action === 'update_password') {
         $oldPassword = $_POST['old_password'] ?? '';
         $newPassword = $_POST['new_password'] ?? '';
@@ -143,19 +143,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
 
-    <link rel="stylesheet" href="../assets/css/base.css" />
-    <link rel="stylesheet" href="../assets/css/fields.css" />
-    <link rel="stylesheet" href="../assets/css/colors.css" />
-    <link rel="stylesheet" href="../assets/css/stacks.css" />
-    <link rel="stylesheet" href="../assets/css/tabs.css" />
-    <link rel="stylesheet" href="../assets/css/table.css" />
+    <link rel="stylesheet" href="../assets/css/base.css"/>
+    <link rel="stylesheet" href="../assets/css/fields.css"/>
+    <link rel="stylesheet" href="../assets/css/colors.css"/>
+    <link rel="stylesheet" href="../assets/css/stacks.css"/>
+    <link rel="stylesheet" href="../assets/css/tabs.css"/>
+    <link rel="stylesheet" href="../assets/css/table.css"/>
     <link rel="stylesheet" href="../assets/css/occupancy.css">
     <link rel="stylesheet" href="../assets/css/profesor_profile.css">
-    <link rel="stylesheet" href="../assets/css/admin.css" />
+    <link rel="stylesheet" href="../assets/css/admin.css"/>
     <link rel="stylesheet" href="../assets/css/professor_notes_modal.css">
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
-
 
 
 </head>
@@ -174,19 +173,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <!-- navigacija tabova -->
     <ul class="nav nav-tabs" id="profTab" role="tablist">
         <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="tab-profile" data-bs-toggle="tab" data-bs-target="#profileTab" type="button">Profil</button>
+            <button class="nav-link active" id="tab-profile" data-bs-toggle="tab" data-bs-target="#profileTab"
+                    type="button">Profil
+            </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="tab-events" data-bs-toggle="tab" data-bs-target="#eventsTab" type="button">Događaji</button>
+            <button class="nav-link" id="tab-events" data-bs-toggle="tab" data-bs-target="#eventsTab" type="button">
+                Događaji
+            </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="tab-courses" data-bs-toggle="tab" data-bs-target="#coursesTab" type="button">Predmeti & Kolokvijumi</button>
+            <button class="nav-link" id="tab-courses" data-bs-toggle="tab" data-bs-target="#coursesTab" type="button">
+                Predmeti & Kolokvijumi
+            </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="tab-avail" data-bs-toggle="tab" data-bs-target="#availabilityTab" type="button">Raspoloživost</button>
+            <button class="nav-link" id="tab-avail" data-bs-toggle="tab" data-bs-target="#availabilityTab"
+                    type="button">Raspoloživost
+            </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="tab-occupancy" data-bs-toggle="tab" data-bs-target="#occupancyTab" type="button">Zauzetost sala</button>
+            <button class="nav-link" id="tab-occupancy" data-bs-toggle="tab" data-bs-target="#occupancyTab"
+                    type="button">Zauzetost sala
+            </button>
         </li>
         <li class="nav-item">
             <button class="nav-link"
@@ -217,11 +226,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <input type="hidden" name="action" value="update_profile">
                     <div class="mb-3">
                         <label for="full_name" class="form-label">Ime i prezime:</label>
-                        <input type="text" id="full_name" name="full_name" class="form-control" value="<?php echo htmlspecialchars($currentProfessor['full_name']); ?>" required>
+                        <input type="text" id="full_name" name="full_name" class="form-control"
+                               value="<?php echo htmlspecialchars($currentProfessor['full_name']); ?>" required>
                     </div>
                     <div class="mb-3">
                         <label for="email" class="form-label">Email:</label>
-                        <input type="email" id="email" name="email" class="form-control" value="<?php echo htmlspecialchars($currentProfessor['email']); ?>" readonly>
+                        <input type="email" id="email" name="email" class="form-control"
+                               value="<?php echo htmlspecialchars($currentProfessor['email']); ?>" readonly>
                     </div>
                     <button type="submit" class="btn btn-primary">Sačuvaj izmjene</button>
                 </form>
@@ -232,12 +243,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <!-- EVENTS / NOTES TAB -->
         <div class="tab-pane fade" id="eventsTab">
-            <h3>Kalendar događaja</h3>
+
 
             <div class="alert alert-info">
                 Kliknite na dan da dodate napomenu.
             </div>
 
+            <!-- TAMNI HEADER SA BLOKOVIMA (LEGENDA) -->
+            <div class="calendar-legend-bar">
+                <div class="legend-title">
+                    Kalendar događaja
+                </div>
+
+                <div class="legend-items">
+                    <span class="legend-badge holiday">Zelena – praznik</span>
+                    <span class="legend-badge colloquium">Žuta – kolokvijum</span>
+                    <span class="legend-badge exam">Narandžasta – ispit</span>
+                </div>
+            </div>
+
+            <!-- BIJELI KALENDAR ISPOD -->
             <div id="events-calendar"></div>
         </div>
 
@@ -281,7 +306,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         if (!$courses) {
                             echo "<tr><td colspan='5'>Nema pridruženih predmeta.</td></tr>";
                         } else {
-                            foreach($courses as $c) {
+                            foreach ($courses as $c) {
                                 $role = $c['is_assistant'] ? 'Asistent' : 'Profesor';
                                 $col1Val = $c['colloquium_1_week'];
                                 $col2Val = $c['colloquium_2_week'];
@@ -294,10 +319,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <td><?php echo htmlspecialchars($c['semester']); ?></td>
                                     <td><?php echo $role; ?></td>
                                     <td>
-                                        <select class="form-select form-select-sm colloquium-1-select" data-course-id="<?php echo (int)$c['id']; ?>">
+                                        <select class="form-select form-select-sm colloquium-1-select"
+                                                data-course-id="<?php echo (int)$c['id']; ?>">
                                             <option value="">-- Izaberi --</option>
-                                            <option value="1" <?php echo ($col1Val == 1) ? 'selected' : ''; ?>>Ne održava se</option>
-                                            <?php for($w=5; $w<=13; $w++):
+                                            <option value="1" <?php echo ($col1Val == 1) ? 'selected' : ''; ?>>Ne
+                                                održava se
+                                            </option>
+                                            <?php for ($w = 5; $w <= 13; $w++):
                                                 $dateLabel = "";
                                                 if ($semStart) {
                                                     $wStart = strtotime("+" . ($w - 1) . " weeks", $semStart);
@@ -312,10 +340,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         </select>
                                     </td>
                                     <td>
-                                        <select class="form-select form-select-sm colloquium-2-select" data-course-id="<?php echo (int)$c['id']; ?>">
+                                        <select class="form-select form-select-sm colloquium-2-select"
+                                                data-course-id="<?php echo (int)$c['id']; ?>">
                                             <option value="">-- Izaberi --</option>
-                                            <option value="1" <?php echo ($col2Val == 1) ? 'selected' : ''; ?>>Ne održava se</option>
-                                            <?php for($w=5; $w<=13; $w++):
+                                            <option value="1" <?php echo ($col2Val == 1) ? 'selected' : ''; ?>>Ne
+                                                održava se
+                                            </option>
+                                            <?php for ($w = 5; $w <= 13; $w++):
                                                 $dateLabel = "";
                                                 if ($semStart) {
                                                     $wStart = strtotime("+" . ($w - 1) . " weeks", $semStart);
@@ -333,8 +364,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <?php
                             }
                         }
-                    } catch(PDOException $e) {
-                        echo "<tr><td colspan='5'>Greška: ".htmlspecialchars($e->getMessage())."</td></tr>";
+                    } catch (PDOException $e) {
+                        echo "<tr><td colspan='5'>Greška: " . htmlspecialchars($e->getMessage()) . "</td></tr>";
                     }
                     ?>
                     </tbody>
@@ -365,11 +396,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </thead>
                             <tbody>
                             <?php
-                            $daysMap = [1=>'Ponedeljak', 2=>'Utorak', 3=>'Srijeda', 4=>'Četvrtak', 5=>'Petak'];
+                            $daysMap = [1 => 'Ponedeljak', 2 => 'Utorak', 3 => 'Srijeda', 4 => 'Četvrtak', 5 => 'Petak'];
                             foreach ($existingAvailability as $slot):
                                 $dName = $daysMap[$slot['weekday']] ?? 'Nepoznato';
                                 $tFrom = date('H:i', strtotime($slot['start_time']));
-                                $tTo   = date('H:i', strtotime($slot['end_time']));
+                                $tTo = date('H:i', strtotime($slot['end_time']));
                                 ?>
                                 <tr>
                                     <td class="fw-bold text-secondary"><?php echo $dName; ?></td>
@@ -389,7 +420,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             <div id="availability-edit-mode" class="d-none">
                 <div class="alert alert-warning mt-2">
-                    <small>Kliknite i prevucite mišem preko kalendara da označite termine. Kliknite na termin da ga obrišete.</small>
+                    <small>Kliknite i prevucite mišem preko kalendara da označite termine. Kliknite na termin da ga
+                        obrišete.</small>
                 </div>
 
                 <div id="availability-calendar" style="margin-top:10px;"></div>
@@ -430,12 +462,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
 
             <div class="legend-container mb-3">
-                <div class="legend-item"><div class="legend-color faculty-fit"></div> <span>FIT</span></div>
-                <div class="legend-item"><div class="legend-color faculty-feb"></div> <span>FEB</span></div>
-                <div class="legend-item"><div class="legend-color faculty-mts"></div> <span>MTS</span></div>
-                <div class="legend-item"><div class="legend-color faculty-pf"></div> <span>PF</span></div>
-                <div class="legend-item"><div class="legend-color faculty-fsj"></div> <span>FSJ</span></div>
-                <div class="legend-item"><div class="legend-color faculty-fvu"></div> <span>FVU</span></div>
+                <div class="legend-item">
+                    <div class="legend-color faculty-fit"></div>
+                    <span>FIT</span></div>
+                <div class="legend-item">
+                    <div class="legend-color faculty-feb"></div>
+                    <span>FEB</span></div>
+                <div class="legend-item">
+                    <div class="legend-color faculty-mts"></div>
+                    <span>MTS</span></div>
+                <div class="legend-item">
+                    <div class="legend-color faculty-pf"></div>
+                    <span>PF</span></div>
+                <div class="legend-item">
+                    <div class="legend-color faculty-fsj"></div>
+                    <span>FSJ</span></div>
+                <div class="legend-item">
+                    <div class="legend-color faculty-fvu"></div>
+                    <span>FVU</span></div>
             </div>
 
             <div class="occupancy-container" style="max-height: 800px; overflow-y: auto;">
@@ -502,13 +546,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                     <div class="modal-body">
                         <div class="mb-3"><label for="oldPassword" class="form-label">Stari password</label>
-                            <input type="password" class="form-control" id="oldPassword" name="old_password" required></div>
+                            <input type="password" class="form-control" id="oldPassword" name="old_password"
+                                   required>
+                        </div>
 
                         <div class="mb-3"><label for="newPassword" class="form-label">Novi password</label>
-                            <input type="password" class="form-control" id="newPassword" name="new_password" required></div>
+                            <input type="password" class="form-control" id="newPassword" name="new_password"
+                                   required>
+                        </div>
 
-                        <div class="mb-3"><label for="confirmPassword" class="form-label">Potvrdi novi password</label>
-                            <input type="password" class="form-control" id="confirmPassword" name="confirm_password" required></div>
+                        <div class="mb-3"><label for="confirmPassword" class="form-label">Potvrdi novi
+                                password</label>
+                            <input type="password" class="form-control" id="confirmPassword" name="confirm_password"
+                                   required></div>
                     </div>
                     <div class="modal-footer">
                         <button type="submit" class="btn btn-primary">Sačuvaj</button>
@@ -540,7 +590,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </script>
     <script>
         // kolokvijum weeks save script
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const saveBtn = document.getElementById('saveColloquiumWeeksBtn');
             if (!saveBtn) return;
 
@@ -568,7 +618,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
 
-            saveBtn.addEventListener('click', function() {
+            saveBtn.addEventListener('click', function () {
                 const rows = document.querySelectorAll('#coursesTableBody tr[data-course-id]');
                 const data = [];
                 let hasValidationError = false;
@@ -635,18 +685,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script src="../assets/js/professor_tabs.js"></script>
 
 
-
     <script>
         // events calendar state varijable
         let eventsCalendar = null;
         let eventsCalendarInitialized = false;
         let holidayDates = new Set();
+        let holidaysByDate = {};
 
         const eventsTabBtn = document.getElementById('tab-events');
 
         eventsTabBtn.addEventListener('shown.bs.tab', function () {
             setTimeout(initEventsCalendar, 50);
         });
+
         // init events calendar kada se otvori tab
         function initEventsCalendar() {
 
@@ -663,7 +714,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 .then(r => r.json())
                 .then(data => {
 
-                    data.forEach(h => holidayDates.add(h.date));
+                    data.forEach(h => {
+                        holidayDates.add(h.date);
+                        holidaysByDate[h.date] = h.name;
+                    });
 
                     let notesByDate = {};
 
@@ -689,11 +743,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             right: ''
                         },
                         // render pin ikone za note event
-                        eventContent: function(arg) {
+                        eventContent: function (arg) {
                             const note = arg.event.extendedProps.note;
 
                             if (!note || note.trim() === '') {
-                                return { domNodes: [] };
+                                return {domNodes: []};
                             }
 
                             const pin = document.createElement('span');
@@ -701,7 +755,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             pin.style.cursor = 'pointer';
                             pin.style.fontSize = '16px';
 
-                            return { domNodes: [pin] };
+                            return {domNodes: [pin]};
                         },
                         // klik na dan — pravljenje privremenog note eventa
                         dateClick(info) {
@@ -727,7 +781,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             modal.classList.remove('hidden');
                         },
                         // loader events (notes) iz baze
-                        events: function(fetchInfo, successCallback) {
+                        events: function (fetchInfo, successCallback) {
                             fetch('api/professor_api.php?action=get_notes')
                                 .then(r => r.json())
                                 .then(data => {
@@ -759,6 +813,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     frame.style.borderRadius = '6px';
                                 }
                             }
+                            if (holidaysByDate[dateStr]) {
+                                const frame = info.el.querySelector('.fc-daygrid-day-frame');
+                                if (frame) {
+                                    const label = document.createElement('div');
+                                    label.textContent = holidaysByDate[dateStr];
+
+                                    label.style.fontSize = '10px';
+                                    label.style.fontWeight = '600';
+                                    label.style.color = '#065f46';
+                                    label.style.marginTop = '6px';
+                                    label.style.lineHeight = '1.2';
+                                    label.style.whiteSpace = 'normal';
+                                    label.style.overflow = 'hidden';
+                                    label.style.textOverflow = 'ellipsis';
+
+                                    frame.appendChild(label);
+                                }
+                            }
+
 
                             if (notesByDate[dateStr]) {
                                 const frame = info.el.querySelector('.fc-daygrid-day-frame');
@@ -767,8 +840,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 }
                             }
                         },
+
+
                         // klik na postojeci note event
-                        eventClick: function(info) {
+                        eventClick: function (info) {
                             const modal = document.getElementById('noteModal');
                             const textarea = document.getElementById('noteTextarea');
                             const deleteBtn = document.getElementById('noteDeleteBtn');
@@ -811,7 +886,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         if (noteId) {
                             fetch('api/professor_api.php?action=update_note', {
                                 method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
+                                headers: {'Content-Type': 'application/json'},
                                 body: JSON.stringify({
                                     id: noteId,
                                     content: content
@@ -831,7 +906,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         fetch('api/professor_api.php?action=save_note', {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
+                            headers: {'Content-Type': 'application/json'},
                             body: JSON.stringify({
                                 date: event.startStr,
                                 content: content
@@ -855,8 +930,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         fetch('api/professor_api.php?action=delete_note', {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ id: noteId })
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({id: noteId})
                         })
                             .then(r => r.json())
                             .then(res => {
@@ -879,7 +954,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 });
         }
     </script>
-
 
 
     <script>
@@ -906,7 +980,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 scheduleCalendar = new FullCalendar.Calendar(container, {
                     initialView: 'timeGridWeek',
-                    locale: 'sr',
+                    locale: 'sr-latin',
                     firstDay: 1,
                     hiddenDays: [0, 6],
                     allDaySlot: false,
@@ -916,7 +990,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     slotMinTime: '08:00:00',
                     slotMaxTime: '21:00:00',
 
-                    dayHeaderContent: function(arg) {
+                    dayHeaderContent: function (arg) {
                         const days = ['PON', 'UTO', 'SRE', 'ČET', 'PET'];
                         return days[arg.date.getDay() - 1] || '';
                     },
@@ -953,8 +1027,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         });
     </script>
-
-
 
 
 </body>

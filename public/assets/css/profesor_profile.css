@@ -1,3 +1,99 @@
 .modal-content {
     background-color: #1f2937;
 }
+
+/* ===== KALENDAR LEGENDA BAR (kao occupancy header) ===== */
+.calendar-legend-bar {
+    background: linear-gradient(135deg, #0f172a, #020617);
+    color: #e5e7eb;
+    border-radius: 14px 14px 0 0;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 0;
+}
+
+.calendar-legend-bar .legend-title {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+
+.calendar-legend-bar .legend-items {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.legend-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(6px);
+}
+
+/* male obojene tačkice ispred teksta */
+.legend-badge::before {
+    content: '';
+    width: 10px;
+    height: 10px;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+/* boje */
+.legend-badge.holiday::before {
+    background: #2ecc71;
+}
+
+/* zelena */
+.legend-badge.colloquium::before {
+    background: #f39c12;
+}
+
+/* žuta */
+.legend-badge.exam::before {
+    background: #f33b12;
+}
+
+/* narandžasta */
+
+/* Brojevi dana u FullCalendar kalendaru */
+#events-calendar .fc-daygrid-day-number {
+    color: #ffffff !important; /* bijela boja */
+    font-weight: 700 !important; /* bold */
+    text-decoration: none !important; /* bez podvlačenja */
+}
+
+/* Ako FullCalendar renderuje broj kao <a> */
+#events-calendar .fc-daygrid-day-number a {
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    text-decoration: none !important;
+}
+
+/* Hover da ne povlači underline */
+#events-calendar .fc-daygrid-day-number:hover,
+#events-calendar .fc-daygrid-day-number a:hover {
+    text-decoration: none !important;
+    color: #ffffff !important;
+}
+
+#events-calendar .fc-daygrid-day-frame {
+    padding: 6px;
+}
+
+#events-calendar .fc-daygrid-day-number {
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+
+

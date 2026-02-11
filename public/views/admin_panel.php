@@ -1262,7 +1262,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <table border="1" cellpadding="5">
             <tr>
-                <th>ID</th>
                 <th>Ime i prezime</th>
                 <th>Email</th>
                 <th>Status</th>
@@ -1271,10 +1270,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php
 
             try {
-                $stmt = $pdo->query("SELECT * FROM professor ORDER BY id");
+                $stmt = $pdo->query("SELECT * FROM professor ORDER BY full_name");
                 while ($row = $stmt->fetch()) {
                     echo "<tr>";
-                    echo "<td>" . htmlspecialchars($row['id']) . "</td>";
                     echo "<td>" . htmlspecialchars($row['full_name']) . "</td>";
                     echo "<td>" . htmlspecialchars($row['email']) . "</td>";
                     echo "<td>" . ($row['is_active'] ? 'Aktivan' : 'Neaktivan') . "</td>";
@@ -1427,7 +1425,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <table border="1" cellpadding="5">
                     <tr>
-                        <th>ID</th>
+
                         <th>Naziv</th>
                         <th>Šifra</th>
                         <th>Semestar</th>
@@ -1439,7 +1437,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     <?php foreach ($courses as $c): ?>
                         <tr>
-                            <td><?= $c['id'] ?></td>
+
                             <td><?= htmlspecialchars($c['name']) ?></td>
                             <td><?= htmlspecialchars($c['code']) ?></td>
                             <td><?= $c['semester'] ?></td>
@@ -1521,7 +1519,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <table border="1" cellpadding="5">
                 <tr>
-                    <th>ID</th>
                     <th>Oznaka</th>
                     <th>Kapacitet</th>
                     <th>Tip</th>
@@ -1534,7 +1531,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmt = $pdo->query("SELECT * FROM room ORDER BY code");
                     while ($row = $stmt->fetch()) {
                         echo "<tr>";
-                        echo "<td>" . htmlspecialchars($row['id']) . "</td>";
+
                         echo "<td>" . htmlspecialchars($row['code']) . "</td>";
                         echo "<td>" . htmlspecialchars($row['capacity']) . "</td>";
                         echo "<td>" . ($row['is_computer_lab'] ? 'Računarska' : 'Standardna') . "</td>";
@@ -1594,7 +1591,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <option value="">-- Nema --</option>
                                 <?php
                                 try {
-                                    $stmt = $pdo->query("SELECT id, full_name, email FROM professor WHERE is_active = TRUE ORDER BY full_name");
+                                    $stmt = $pdo->query("SELECT id, full_name, email FROM professor WHERE is_active = TRUE ORDER BY full_name ASC");
                                     while ($p = $stmt->fetch()) {
                                         echo "<option value='" . $p['id'] . "'>" . htmlspecialchars($p['full_name']) . " (" . htmlspecialchars($p['email']) . ")</option>";
                                     }
@@ -1610,7 +1607,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     <table border="1" cellpadding="5">
                         <tr>
-                            <th>ID</th>
                             <th>Username</th>
                             <th>Role</th>
                             <th>Profesor</th>
@@ -1620,10 +1616,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <?php
                         try {
                             // Sada takođe biramo email povezane profesorke
-                            $stmt = $pdo->query("SELECT ua.*, p.full_name as professor_name, p.email as professor_email FROM user_account ua LEFT JOIN professor p ON ua.professor_id = p.id ORDER BY ua.id");
+                            $stmt = $pdo->query("SELECT ua.*, p.full_name as professor_name, p.email as professor_email FROM user_account ua LEFT JOIN professor p ON ua.professor_id = p.id ORDER BY ua.username");
+
+                            
                             while ($row = $stmt->fetch()) {
                                 echo "<tr>";
-                                echo "<td>" . htmlspecialchars($row['id']) . "</td>";
                                 echo "<td>" . htmlspecialchars($row['username']) . "</td>";
                                 echo "<td>" . htmlspecialchars($row['role_enum']) . "</td>";
                                 // Pokazujemo ime profesora i, ako postoji, njegov email
@@ -1708,7 +1705,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <table border="1" cellpadding="5"
                                style="margin-top: 20px; width: 100%; border-collapse: collapse;">
                             <tr style="background: #f4f4f4; color: #333;">
-                                <th>ID</th>
+
                                 <th>Naziv</th>
                                 <th>Zimski semestar (Start)</th>
                                 <th>Ljetnji semestar (Start)</th>
@@ -1720,7 +1717,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 $stmt = $pdo->query("SELECT * FROM academic_year ORDER BY id DESC");
                                 while ($row = $stmt->fetch()) {
                                     echo "<tr>";
-                                    echo "<td>" . htmlspecialchars($row['id']) . "</td>";
                                     echo "<td>" . htmlspecialchars($row['year_label']) . "</td>";
                                     echo "<td>" . htmlspecialchars($row['winter_semester_start']) . "</td>";
                                     echo "<td>" . htmlspecialchars($row['summer_semester_start']) . "</td>";
@@ -3870,9 +3866,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     ? Math.floor((usableWidth - timeColWidth) / (colCount - 1))
                                     : usableWidth;
 
-                                const columnStyles = { 0: { cellWidth: timeColWidth } };
+                                const columnStyles = {0: {cellWidth: timeColWidth}};
                                 for (let i = 1; i < colCount; i++) {
-                                    columnStyles[i] = { cellWidth: otherColWidth };
+                                    columnStyles[i] = {cellWidth: otherColWidth};
                                 }
 
                                 doc.autoTable({
@@ -3956,9 +3952,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 ? Math.floor((usableWidth - timeColWidth) / (colCount - 1))
                                 : usableWidth;
 
-                            const columnStyles = { 0: { cellWidth: timeColWidth } };
+                            const columnStyles = {0: {cellWidth: timeColWidth}};
                             for (let i = 1; i < colCount; i++) {
-                                columnStyles[i] = { cellWidth: otherColWidth };
+                                columnStyles[i] = {cellWidth: otherColWidth};
                             }
 
                             doc.autoTable({

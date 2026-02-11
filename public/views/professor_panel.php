@@ -733,7 +733,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // fullcalendar instanca za notes
                     eventsCalendar = new FullCalendar.Calendar(calendarEl, {
                         initialView: 'dayGridMonth',
-                        locale: 'sr',
+                        locale: 'sr-latin',
                         firstDay: 1,
                         height: 'auto',
 

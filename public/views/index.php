@@ -58,7 +58,7 @@ if(isset($_SESSION['role'])){
 </section>
 
 <footer>
-    © 2025 FTN Sistem — Sva prava zadržana
+    © 2026 FTN Sistem
 </footer>
 
 <script src="../assets/js/index.js"></script>

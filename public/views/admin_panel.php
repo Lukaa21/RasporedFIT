@@ -1887,7 +1887,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     ?>
 
-                    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
                     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 
 
@@ -2055,11 +2054,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 const useAssistants = ev.type === 'EXERCISE' || ev.type === 'LAB';
                                 const nameList = useAssistants ? (ev.assistants || '') : (ev.professors || '');
                                 const fallbackNameList = (!nameList && ev.professors) ? ev.professors : nameList;
-                                const profLabel = fallbackNameList ? (' - ' + fallbackNameList) : '';
                                 const locationLabel = ev.is_online ? 'ONLINE' : (ev.room || '');
-                                const locationSuffix = locationLabel ? (' (' + locationLabel + ')') : '';
-                                const typeSuffix = typeLabel ? (' [' + typeLabel + ']') : '';
-                                return ev.course + profLabel + typeSuffix + locationSuffix;
+                                const typeLine = typeLabel ? (typeLabel + (locationLabel ? (' (' + locationLabel + ')') : '')) : '';
+                                return [ev.course, fallbackNameList, typeLine].filter(Boolean).join('<br>');
                             }
 
                             function buildTableForSemester(sem, events, scheduleIdx, totalSchedules) {
@@ -3805,8 +3802,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         function saveFullScheduleAsPDF() {
                             const {jsPDF} = window.jspdf;
                             const doc = new jsPDF('landscape', 'pt', 'a4');
-                            doc.setFont("DejaVuSans");
+                            doc.setFont("DejaVuSans", "normal");
                             let y = 40;
+
+                            const normalizeCellText = (text) => (text || '')
+                                .replace(/\r/g, '')
+                                .replace(/[ \t]+/g, ' ')
+                                .replace(/\n\s+/g, '\n')
+                                .trim();
+                            const getCellText = (td) => {
+                                if (!td) return '';
+                                const html = td.innerHTML || '';
+                                if (!html) return normalizeCellText(td.textContent || '');
+                                const withBreaks = html.replace(/<br\s*\/?>/gi, '\n');
+                                const text = withBreaks.replace(/<[^>]*>/g, '');
+                                return normalizeCellText(text);
+                            };
+                            const baseStyles = {
+                                font: "DejaVuSans",
+                                fontSize: 9,
+                                cellPadding: 4,
+                                overflow: 'linebreak',
+                                cellWidth: 'wrap',
+                                valign: 'middle',
+                                minCellHeight: 28
+                            };
 
                             doc.setFontSize(18);
                             doc.text('Kompletan raspored časova', 40, y);
@@ -3830,33 +3850,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 const rows = [];
 
                                 table.querySelectorAll('thead th').forEach(th => {
-                                    headers.push(th.innerText);
+                                    headers.push(normalizeCellText(th.textContent));
                                 });
 
                                 table.querySelectorAll('tbody tr').forEach(tr => {
                                     const row = [];
                                     tr.querySelectorAll('td').forEach(td => {
-                                        row.push(td.innerText);
+                                        row.push(getCellText(td));
                                     });
                                     rows.push(row);
                                 });
+
+                                const pageWidth = doc.internal.pageSize.getWidth();
+                                const marginX = 40;
+                                const usableWidth = pageWidth - (marginX * 2);
+                                const colCount = headers.length;
+                                const timeColWidth = 70;
+                                const otherColWidth = colCount > 1
+                                    ? Math.floor((usableWidth - timeColWidth) / (colCount - 1))
+                                    : usableWidth;
+
+                                const columnStyles = { 0: { cellWidth: timeColWidth } };
+                                for (let i = 1; i < colCount; i++) {
+                                    columnStyles[i] = { cellWidth: otherColWidth };
+                                }
 
                                 doc.autoTable({
                                     head: [headers],
                                     body: rows,
                                     startY: y,
-                                    styles: {
-                                        font: "DejaVuSans",
-                                        fontSize: 9,
-                                        cellPadding: 4
-                                    },
+                                    tableWidth: usableWidth,
+                                    styles: baseStyles,
                                     headStyles: {
-                                        font: "DejaVuSans",
+                                        ...baseStyles,
                                         fillColor: [15, 23, 42] // tamna (kao tvoj UI)
-                                    }
-                                    bodyStyles: {
-                                        font: "DejaVuSans"
-                                    }
+                                    },
+                                    bodyStyles: baseStyles,
+                                    columnStyles
                                 });
                             });
 
@@ -3872,45 +3902,77 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             const doc = new jsPDF('landscape', 'pt', 'a4');
 
                             // AKTIVIRAJ FONT
-                            doc.setFont("DejaVuSans");
-                            console.log(doc.getFontList());
+                            doc.setFont("DejaVuSans", "normal");
                             doc.setFontSize(16);
                             doc.text(`Raspored časova – ${semester}. semestar`, 40, 40);
                             let startY = 70;
+
+                            const normalizeCellText = (text) => (text || '')
+                                .replace(/\r/g, '')
+                                .replace(/[ \t]+/g, ' ')
+                                .replace(/\n\s+/g, '\n')
+                                .trim();
+                            const getCellText = (td) => {
+                                if (!td) return '';
+                                const html = td.innerHTML || '';
+                                if (!html) return normalizeCellText(td.textContent || '');
+                                const withBreaks = html.replace(/<br\s*\/?>/gi, '\n');
+                                const text = withBreaks.replace(/<[^>]*>/g, '');
+                                return normalizeCellText(text);
+                            };
+                            const baseStyles = {
+                                font: "DejaVuSans",
+                                fontSize: 9,
+                                cellPadding: 4,
+                                overflow: 'linebreak',
+                                cellWidth: 'wrap',
+                                valign: 'middle',
+                                minCellHeight: 28
+                            };
 
                             const rows = [];
                             const headers = [];
 
                             // headeri
                             table.querySelectorAll('thead th').forEach(th => {
-                                headers.push(th.innerText);
+                                headers.push(normalizeCellText(th.textContent));
                             });
 
                             // redovi
                             table.querySelectorAll('tbody tr').forEach(tr => {
                                 const row = [];
                                 tr.querySelectorAll('td').forEach(td => {
-                                    row.push(td.innerText);
+                                    row.push(getCellText(td));
                                 });
                                 rows.push(row);
                             });
+
+                            const pageWidth = doc.internal.pageSize.getWidth();
+                            const marginX = 40;
+                            const usableWidth = pageWidth - (marginX * 2);
+                            const colCount = headers.length;
+                            const timeColWidth = 70;
+                            const otherColWidth = colCount > 1
+                                ? Math.floor((usableWidth - timeColWidth) / (colCount - 1))
+                                : usableWidth;
+
+                            const columnStyles = { 0: { cellWidth: timeColWidth } };
+                            for (let i = 1; i < colCount; i++) {
+                                columnStyles[i] = { cellWidth: otherColWidth };
+                            }
 
                             doc.autoTable({
                                 head: [headers],
                                 body: rows,
                                 startY: startY,
-                                styles: {
-                                    font: "DejaVuSans",     // BITNO
-                                    fontSize: 9,
-                                    cellPadding: 4
-                                },
+                                tableWidth: usableWidth,
+                                styles: baseStyles,
                                 headStyles: {
-                                    font: "DejaVuSans",     // BITNO
+                                    ...baseStyles,
                                     fillColor: [22, 101, 52]
                                 },
-                                bodyStyles: {
-                                    font: "DejaVuSans"      // BITNO
-                                }
+                                bodyStyles: baseStyles,
+                                columnStyles
                             });
 
                             doc.save(`raspored_semestar_${semester}.pdf`);

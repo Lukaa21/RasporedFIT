@@ -5,4 +5,4 @@
         this.addFont('DejaVuSans-normal.ttf', 'DejaVuSans', 'normal');
     };
     jsPDF.API.events.push(['addFonts', callAddFont])
-})(window.jspdf.jsPDF.API);
+})(window.jspdf && window.jspdf.jsPDF ? window.jspdf.jsPDF : window.jsPDF);

@@ -524,22 +524,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         }
                     }
 
-                    $count = count($existing);
-
-                    if ($count >= 2) {
-                        $error = "Na predmetu već postoje dva predavača. Ne možete dodati trećeg.";
-                        break;
-                    }
-
-                    if ($count === 1) {
-                        $existingRole = (int)$existing[0]['is_assistant'];
-                        // Ako bi nastala dva ista tipa (dva profesora ili dva asistenta) - zabranjeno
-                        if ($existingRole === $is_assistant) {
-                            $error = "Ako postoje dva predavača, moraju biti profesor i asistent (ne mogu biti oba ista uloga).";
-                            break;
-                        }
-                    }
-
                     // Ubaci vezu (role_enum ima podrazumijevanu vrijednost u bazi)
                     $stmt = $pdo->prepare("INSERT INTO course_professor (course_id, professor_id, is_assistant) VALUES (?, ?, ?)");
                     $stmt->execute([$course_id, $professor_id, $is_assistant]);
@@ -824,10 +808,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         // Basic validation
                         $count = count($assignments);
-                        if ($count > 2) throw new Exception('Ne može biti više od dva predavača.');
 
                         $ids = [];
-                        $assistants = 0;
                         foreach ($assignments as $a) {
                             // accept either professor_id or id (frontend may send {id:...})
                             if (!isset($a['professor_id']) && !isset($a['id'])) throw new Exception('Nedostaje professor_id.');
@@ -835,10 +817,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             if ($pid <= 0) throw new Exception('Neispravan professor_id.');
                             if (in_array($pid, $ids)) throw new Exception('Isti profesor ne može biti u više uloga.');
                             $ids[] = $pid;
-                            $is_asst = isset($a['is_assistant']) ? (int)$a['is_assistant'] : 0;
-                            if ($is_asst) $assistants++;
                         }
-                        if ($count === 2 && $assistants !== 1) throw new Exception('Ako su dva predavača, mora biti jedan profesor i jedan asistent.');
 
                         // Zamijeni veze u transakciji
                         $pdo->beginTransaction();

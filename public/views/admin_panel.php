@@ -1228,7 +1228,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ?>
         <h2>Upravljanje profesorima</h2>
         <button class="action-button add-button" onclick="toggleForm('profesorForm')">+ Dodaj Profesora</button>
-        <button class="action-button add-button deadline-button" onclick="toggleForm('deadlineForm')">+ Deadline unosa
+        <button class="action-button add-button deadline-button" onclick="toggleForm('deadlineForm')">+ Rok za unos
             kolokvijuma
         </button>
 
@@ -1248,7 +1248,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
 
         <div id="deadlineForm" class="form-container" style="display:none">
-            <h3>Postavi deadline za izbor sedmice kolokvijuma</h3>
+            <h3>Postavite rok za izbor sedmice kolokvijuma</h3>
             <form method="post">
                 <input type="hidden" name="action" value="set_deadline">
                 <input type="date" id="deadline_date" name="deadline_date" value="<?php echo $current_deadline; ?>"

@@ -155,6 +155,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="../assets/css/professor_notes_modal.css">
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/locales-all.global.min.js"></script>
 
 
 </head>
@@ -733,7 +734,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // fullcalendar instanca za notes
                     eventsCalendar = new FullCalendar.Calendar(calendarEl, {
                         initialView: 'dayGridMonth',
-                        locale: 'sr',
+                        locale: 'sr-latin',
                         firstDay: 1,
                         height: 'auto',
 

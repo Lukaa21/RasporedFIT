@@ -26,7 +26,7 @@ if(isset($_SESSION['role'])){
 
 <!-- HERO SECTION -->
 <section class="hero">
-    <img id="hero-logo" src="../../img/fit-logo.png" alt="FTN Logo">
+    <img id="hero-logo" src="/img/fit-logo.png" alt="FTN Logo">
     <h1>FIT Sistem</h1>
     <p>Moderna digitalna platforma za profesore, studente i administraciju. Jednostavan pristup rasporedima, predmetima i internim informacijama fakulteta.</p>
 

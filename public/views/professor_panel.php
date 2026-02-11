@@ -734,7 +734,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // fullcalendar instanca za notes
                     eventsCalendar = new FullCalendar.Calendar(calendarEl, {
                         initialView: 'dayGridMonth',
-                        locale: 'sr-latin',
+                        locale: 'mne',
                         firstDay: 1,
                         height: 'auto',
 
@@ -981,7 +981,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 scheduleCalendar = new FullCalendar.Calendar(container, {
                     initialView: 'timeGridWeek',
-                    locale: 'sr-latin',
+                    locale: 'mne',
+                    
                     firstDay: 1,
                     hiddenDays: [0, 6],
                     allDaySlot: false,

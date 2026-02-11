@@ -1712,6 +1712,101 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             ?>
                         </table>
                     </div>
+
+                    <!-- Sekcija: Predmeti i sedmice kolokvijuma -->
+                    <div style="margin-bottom: 40px;">
+                        <h3>Predmeti i sedmice kolokvijuma</h3>
+                        <p>Pregled svih predmeta sa povezanim profesorima/asistentima i postavljenim sedmicama kolokvijuma.</p>
+
+                        <table border="1" cellpadding="5" style="margin-top: 20px; width: 100%; border-collapse: collapse;">
+                            <tr style="background: #f4f4f4; color: #333;">
+                                <th>Predmet</th>
+                                <th>Profesori</th>
+                                <th>Asistenti</th>
+                                <th>Kolokvijum 1</th>
+                                <th>Kolokvijum 2</th>
+                            </tr>
+                            <?php
+                            try {
+                                $stmtYear = $pdo->query("SELECT winter_semester_start, summer_semester_start FROM academic_year WHERE is_active = TRUE ORDER BY id DESC LIMIT 1");
+                                $academicYear = $stmtYear->fetch(PDO::FETCH_ASSOC);
+
+                                $winterStart = $academicYear && $academicYear['winter_semester_start'] ? strtotime($academicYear['winter_semester_start']) : null;
+                                $summerStart = $academicYear && $academicYear['summer_semester_start'] ? strtotime($academicYear['summer_semester_start']) : null;
+
+                                if (!function_exists('formatColloquiumWeekLabel')) {
+                                    function formatColloquiumWeekLabel($week, $semester, $winterStart, $summerStart) {
+                                        if ($week === null) return 'Nije uneseno';
+                                        $week = (int)$week;
+                                        if ($week <= 0) return 'Nije uneseno';
+                                        if ($week === 1) return 'Ne održava se';
+
+                                        $semStart = ($semester % 2 !== 0) ? $winterStart : $summerStart;
+                                        $label = $week . '. sedmica';
+                                        if ($semStart) {
+                                            $wStart = strtotime('+' . ($week - 1) . ' weeks', $semStart);
+                                            $wEnd = strtotime('+6 days', $wStart);
+                                            $label .= ' (' . date('d.m.Y', $wStart) . '-' . date('d.m.Y', $wEnd) . ')';
+                                        }
+                                        return $label;
+                                    }
+                                }
+
+                                $stmt = $pdo->query("SELECT c.id, c.name, c.semester, c.colloquium_1_week, c.colloquium_2_week, p.full_name, cp.is_assistant
+                                                    FROM course c
+                                                    LEFT JOIN course_professor cp ON cp.course_id = c.id
+                                                    LEFT JOIN professor p ON p.id = cp.professor_id
+                                                    ORDER BY c.name, cp.is_assistant, p.full_name");
+                                $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+                                $courses = [];
+                                foreach ($rows as $row) {
+                                    $cid = (int)$row['id'];
+                                    if (!isset($courses[$cid])) {
+                                        $courses[$cid] = [
+                                            'name' => $row['name'],
+                                            'semester' => (int)$row['semester'],
+                                            'col1' => $row['colloquium_1_week'],
+                                            'col2' => $row['colloquium_2_week'],
+                                            'professors' => [],
+                                            'assistants' => []
+                                        ];
+                                    }
+
+                                    if (!empty($row['full_name'])) {
+                                        if ((int)$row['is_assistant'] === 1) {
+                                            $courses[$cid]['assistants'][] = $row['full_name'];
+                                        } else {
+                                            $courses[$cid]['professors'][] = $row['full_name'];
+                                        }
+                                    }
+                                }
+
+                                if (empty($courses)) {
+                                    echo "<tr><td colspan='5'>Nema predmeta za prikaz.</td></tr>";
+                                } else {
+                                    foreach ($courses as $course) {
+                                        $profList = !empty($course['professors']) ? implode(', ', array_unique($course['professors'])) : '—';
+                                        $asstList = !empty($course['assistants']) ? implode(', ', array_unique($course['assistants'])) : '—';
+
+                                        $col1Label = formatColloquiumWeekLabel($course['col1'], $course['semester'], $winterStart, $summerStart);
+                                        $col2Label = formatColloquiumWeekLabel($course['col2'], $course['semester'], $winterStart, $summerStart);
+
+                                        echo '<tr>';
+                                        echo '<td>' . htmlspecialchars($course['name']) . '</td>';
+                                        echo '<td>' . htmlspecialchars($profList) . '</td>';
+                                        echo '<td>' . htmlspecialchars($asstList) . '</td>';
+                                        echo '<td>' . htmlspecialchars($col1Label) . '</td>';
+                                        echo '<td>' . htmlspecialchars($col2Label) . '</td>';
+                                        echo '</tr>';
+                                    }
+                                }
+                            } catch (PDOException $e) {
+                                echo "<tr><td colspan='5'>Greška: " . htmlspecialchars($e->getMessage()) . "</td></tr>";
+                            }
+                            ?>
+                        </table>
+                    </div>
                     <?php
                     break;
 

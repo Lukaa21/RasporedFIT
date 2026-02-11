@@ -1779,6 +1779,72 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </table>
                     </div>
 
+                    <!-- Sekcija: Rezervisani termini profesora -->
+                    <div style="margin-bottom: 40px;">
+                        <h3>Rezervisani termini profesora</h3>
+                        <p>Termini koje su profesori unijeli preko svog panela.</p>
+
+                        <?php
+                        try {
+                            $stmt = $pdo->query("SELECT pa.professor_id, pa.weekday, pa.start_time, pa.end_time, p.full_name
+                                                FROM professor_availability pa
+                                                JOIN professor p ON p.id = pa.professor_id
+                                                ORDER BY p.full_name, pa.weekday, pa.start_time");
+                            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+                            $dayMap = [
+                                1 => 'Ponedjeljak',
+                                2 => 'Utorak',
+                                3 => 'Srijeda',
+                                4 => 'Četvrtak',
+                                5 => 'Petak'
+                            ];
+
+                            if (empty($rows)) {
+                                echo "<p>Nema rezervisanih termina.</p>";
+                            } else {
+                                $grouped = [];
+                                foreach ($rows as $row) {
+                                    $pid = (int)$row['professor_id'];
+                                    if (!isset($grouped[$pid])) {
+                                        $grouped[$pid] = [
+                                            'name' => $row['full_name'],
+                                            'items' => []
+                                        ];
+                                    }
+                                    $grouped[$pid]['items'][] = $row;
+                                }
+
+                                foreach ($grouped as $prof) {
+                                    echo "<details style='margin-top: 12px; border: 1px solid #3a3f45; border-radius: 6px; padding: 8px 10px; background: #1f232a;'>";
+                                    echo "<summary style='cursor: pointer; font-weight: 600;'>" . htmlspecialchars($prof['name']) . "</summary>";
+                                    echo "<table border='1' cellpadding='5' style='margin-top: 10px; width: 100%; border-collapse: collapse; background: #242a31;'>";
+                                    echo "<tr style='background: #f4f4f4; color: #333;'>";
+                                    echo "<th>Dan</th><th>Od</th><th>Do</th>";
+                                    echo "</tr>";
+
+                                    foreach ($prof['items'] as $row) {
+                                        $dayLabel = $dayMap[(int)$row['weekday']] ?? (string)$row['weekday'];
+                                        $startTime = $row['start_time'] ? substr($row['start_time'], 0, 5) : '';
+                                        $endTime = $row['end_time'] ? substr($row['end_time'], 0, 5) : '';
+
+                                        echo '<tr>';
+                                        echo '<td>' . htmlspecialchars($dayLabel) . '</td>';
+                                        echo '<td>' . htmlspecialchars($startTime) . '</td>';
+                                        echo '<td>' . htmlspecialchars($endTime) . '</td>';
+                                        echo '</tr>';
+                                    }
+
+                                    echo "</table>";
+                                    echo "</details>";
+                                }
+                            }
+                        } catch (PDOException $e) {
+                            echo "<p>Greška: " . $e->getMessage() . "</p>";
+                        }
+                        ?>
+                    </div>
+
                     <!-- Sekcija: Predmeti i sedmice kolokvijuma -->
                     <div style="margin-bottom: 40px;">
                         <h3>Predmeti i sedmice kolokvijuma</h3>

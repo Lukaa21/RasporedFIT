@@ -1420,7 +1420,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     FROM course c
     LEFT JOIN course_professor cp ON cp.course_id = c.id
     LEFT JOIN professor p ON p.id = cp.professor_id
-    ORDER BY c.id
+    ORDER BY c.name ASC, c.id ASC
 ");
 
                 $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);

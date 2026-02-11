@@ -1119,7 +1119,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ");
                     $stmt->execute([$deadline_date, $deadline_date]);
 
-                    header("Location: ?page=profesori&success=1&message=" . urlencode("Uspješno postavljen deadline za izbor sedmice kolokvijuma."));
+                    header("Location: ?page=profesori&success=1&message=" . urlencode("Uspješno postavljen rok za izbor sedmice kolokvijuma."));
                     exit;
                 } catch (PDOException $e) {
                     $error = "Greška pri postavljanju deadlina: " . $e->getMessage();
@@ -1841,7 +1841,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     break;
 
                 case 'pocetna':
-                    echo "<h2>Dobrodošli na admin panel</h2>";
+                    echo "<h2>Rasporedi</h2>";
                     echo "<p>Odaberite opciju ispod da generišete raspored časova:</p>";
 
                     echo "<button id='generate-schedule' class='option-button'>Generiši raspored časova</button>";

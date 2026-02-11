@@ -3873,7 +3873,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                             // AKTIVIRAJ FONT
                             doc.setFont("DejaVuSans");
-
+                            console.log(doc.getFontList());
                             doc.setFontSize(16);
                             doc.text(`Raspored časova – ${semester}. semestar`, 40, 40);
                             let startY = 70;

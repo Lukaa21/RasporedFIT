@@ -2350,7 +2350,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         summer_schedule_id: summerScheduleId
                                     };
 
-                                    const response = await fetch('../../src/api/schedule_lock.php', {
+                                    const response = await fetch('../api/schedule_lock.php', {
                                         method: 'POST',
                                         headers: {'Content-Type': 'application/json'},
                                         body: JSON.stringify(payload)
@@ -2727,7 +2727,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                                         // console.log('Sending payload:', JSON.stringify(payload, null, 2));
 
-                                        const response = await fetch('../../src/api/schedule_lock.php', {
+                                        const response = await fetch('../api/schedule_lock.php', {
                                             method: 'POST',
                                             headers: {
                                                 'Content-Type': 'application/json',

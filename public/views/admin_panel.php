@@ -51,12 +51,19 @@ if (isset($_GET['action']) && $_GET['action'] === 'getschedule') {
                 ae.ends_at,
                 c.name AS coursename,
                 r.code AS roomcode,
-                c.semester
+                c.semester,
+                ae.type_enum,
+                c.is_online,
+                COALESCE(string_agg(DISTINCT p.full_name, ', ') FILTER (WHERE cp.is_assistant = FALSE), '') AS professors,
+                COALESCE(string_agg(DISTINCT p.full_name, ', ') FILTER (WHERE cp.is_assistant = TRUE), '') AS assistants
             FROM academic_event ae
             JOIN course c ON ae.course_id = c.id
             LEFT JOIN room r ON ae.room_id = r.id
+            LEFT JOIN course_professor cp ON cp.course_id = c.id
+            LEFT JOIN professor p ON p.id = cp.professor_id
             WHERE ae.type_enum IN ('LECTURE', 'EXERCISE', 'LAB')
               AND ae.schedule_id IN (" . implode(',', array_fill(0, count($scheduleIds), '?')) . ")
+            GROUP BY ae.schedule_id, ae.day, ae.starts_at, ae.ends_at, c.name, r.code, c.semester, ae.type_enum, c.is_online
             ORDER BY ae.schedule_id, c.semester, ae.day, ae.starts_at
         ");
         $stmt->execute($scheduleIds);
@@ -85,7 +92,11 @@ if (isset($_GET['action']) && $_GET['action'] === 'getschedule') {
                 'start'  => substr($row['starts_at'], 11, 5),
                 'end'    => substr($row['ends_at'],   11, 5),
                 'course' => $row['coursename'],
-                'room'   => $row['roomcode']
+                'room'   => $row['roomcode'],
+                'type'   => $row['type_enum'],
+                'is_online' => (bool)$row['is_online'],
+                'professors' => $row['professors'],
+                'assistants' => $row['assistants']
             ];
         }
 
@@ -2010,6 +2021,23 @@ function renderScheduleData(data) {
         });
     }
 
+    function formatEventLabel(ev) {
+        const typeMap = {
+            LECTURE: 'Predavanje',
+            EXERCISE: 'Vježbe',
+            LAB: 'Lab'
+        };
+        const typeLabel = typeMap[ev.type] || ev.type || '';
+        const useAssistants = ev.type === 'EXERCISE' || ev.type === 'LAB';
+        const nameList = useAssistants ? (ev.assistants || '') : (ev.professors || '');
+        const fallbackNameList = (!nameList && ev.professors) ? ev.professors : nameList;
+        const profLabel = fallbackNameList ? (' - ' + fallbackNameList) : '';
+        const locationLabel = ev.is_online ? 'ONLINE' : (ev.room || '');
+        const locationSuffix = locationLabel ? (' (' + locationLabel + ')') : '';
+        const typeSuffix = typeLabel ? (' [' + typeLabel + ']') : '';
+        return ev.course + profLabel + typeSuffix + locationSuffix;
+    }
+
     function buildTableForSemester(sem, events, scheduleIdx, totalSchedules) {
         const wrapper = document.createElement('div');
         wrapper.className = 'semester-wrapper';
@@ -2072,7 +2100,7 @@ function renderScheduleData(data) {
                 const td = document.createElement('td');
                 const cellEvents = events.filter(ev => ev.day === d && (ev.start + '-' + ev.end) === slot);
                 if (cellEvents.length > 0) {
-                    td.innerHTML = cellEvents.map(ev => ev.course + ' (' + ev.room + ')').join('<br>');
+                    td.innerHTML = cellEvents.map(ev => formatEventLabel(ev)).join('<br>');
                 }
                 tr.appendChild(td);
             }

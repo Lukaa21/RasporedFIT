@@ -605,7 +605,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 showLoading(true);
 
-                fetch(window.location.href, {
+                fetch('api/professor_api.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'

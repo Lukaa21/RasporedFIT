@@ -1019,7 +1019,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             case 'add_account':
                 $username = trim($_POST['username'] ?? '');
                 $password = $_POST['password'] ?? '';
-                $role = $_POST['role'] ?? 'USER';
+                $role = $_POST['role'] ?? 'PROFESSOR';
+                if (!in_array($role, ['ADMIN', 'PROFESSOR'], true)) {
+                    $role = 'PROFESSOR';
+                }
                 $professor_id = isset($_POST['professor_id']) && is_numeric($_POST['professor_id']) ? (int)$_POST['professor_id'] : null;
 
                 if ($username === '' || $password === '') {
@@ -1622,7 +1625,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <select id="role" name="role">
                                 <option value="ADMIN">ADMIN</option>
                                 <option value="PROFESSOR">PROFESSOR</option>
-                                <option value="USER">USER</option>
                             </select>
 
                             <label for="professor_id">Povezan profesor (opcionalno):</label>
